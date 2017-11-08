@@ -37,6 +37,14 @@ type PurchaseOrder struct {
 	AuditInfo   AuditInfo
 }
 
+type Shipment struct {
+	ShipmentNumber   string `json:"shipmentNumber"`
+	PartNumber       string `json:"partNumber"`
+	SupplierID       string `json:"supplerId"`
+	PartSerialNumber string `json:"partSerialNumber"`
+	PONumber         string `json:"poNumber"`
+}
+
 type OrderStatus struct {
 	PONumber string `json:"poNumber"`
 	Status   string `json:"status"`

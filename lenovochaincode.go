@@ -68,7 +68,8 @@ const (
 /////////////////////////////////////////////////////
 const (
 	GV   string = "getVersion"
-	ISPO string = "recordPurchaseOrder"
+	CPO  string = "createPurchaseOrder"
+	CSO  string = "createShipment"
 	SHPT string = "shipPart"
 	CUR  string = "createUser"
 	UUR  string = "updateUser"
@@ -81,7 +82,8 @@ func (t *LenovoChainCode) initMaps() {
 	t.tableMap[BIT] = 3
 	t.funcMap = make(map[string]InvokeFunc)
 	t.funcMap[GV] = getVersion
-	t.funcMap[ISPO] = RecordPurchaseOrder
+	t.funcMap[CPO] = CreatePurchaseOrder
+	t.funcMap[CSO] = CreateShipment
 	t.funcMap[SHPT] = ShipPart
 	//	t.funcMap[CUR] = CreateUser
 	//	t.funcMap[UUR] = UpdateUser
@@ -114,24 +116,48 @@ func getVersion(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(version)
 }
 
-////////////////////////////////////////////////////////////////////////////
-// Inserting Data in to BasicinfoTable that may be linked with
-// Supplyer/Buyer
-////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////
-// Delete  Data in to BasicinfoTable that may be linked with
-// Supplyer/Buyer
-////////////////////////////////////////////////////////////////////////////
-
-func RecordPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func CreateShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
-	logger.Infof("RecordPurchaseOrder : Arguments : %s", args[0])
+	logger.Infof("CreateShipment : Arguments : %s", args[0])
+	shipment := Shipment{}
+	err = json.Unmarshal([]byte(args[0]), &shipment)
+	if err != nil {
+		return shim.Error("CreateShipment : Failed to convert arg[0] to a Shipment object")
+	}
+
+	// Query and Retrieve the Full BaicInfo
+	keys := []string{shipment.shipmentNumber}
+
+	objectType := "PO"
+	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
+	if err != nil {
+		return shim.Error("CreateShipment() : Failed to query shipment object")
+	}
+
+	if Avalbytes != nil {
+		return shim.Error(fmt.Sprintf("CreateShipment() : "+
+			"ID for Shipment Number: %s already exist ", shipment.shipmentNumber))
+	}
+
+	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
+	if err != nil {
+		logger.Errorf("CreateShipment : Error inserting Object into LedgerState %s", err)
+		return shim.Error("CreateShipment : Shipment Update failed")
+	}
+
+	return shim.Success(nil)
+
+}
+
+func CreatePurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var err error
+	var Avalbytes []byte
+	logger.Infof("CreatePurchaseOrder : Arguments : %s", args[0])
 	purchaseOrder := PurchaseOrder{}
 	err = json.Unmarshal([]byte(args[0]), &purchaseOrder)
 	if err != nil {
-		return shim.Error("RecordPurchaseOrder : Failed to convert arg[0] to a PO object")
+		return shim.Error("CreatePurchaseOrder : Failed to convert arg[0] to a PO object")
 	}
 
 	// Query and Retrieve the Full BaicInfo
@@ -140,18 +166,18 @@ func RecordPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	objectType := "PO"
 	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
 	if err != nil {
-		return shim.Error("RecordPurchaseOrder() : Failed to query POs object")
+		return shim.Error("CreatePurchaseOrder() : Failed to query POs object")
 	}
 
 	if Avalbytes != nil {
-		return shim.Error(fmt.Sprintf("RecordPurchaseOrder() : "+
+		return shim.Error(fmt.Sprintf("CreatePurchaseOrder() : "+
 			"PO for PONumber: %s already exist ", purchaseOrder.PONumber))
 	}
 
 	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
 	if err != nil {
-		logger.Errorf("RecordPurchaseOrder : Error inserting Object into LedgerState %s", err)
-		return shim.Error("RecordPurchaseOrder : POs Update failed")
+		logger.Errorf("CreatePurchaseOrder : Error inserting Object into LedgerState %s", err)
+		return shim.Error("CreatePurchaseOrder : POs Update failed")
 	}
 
 	return shim.Success(nil)
