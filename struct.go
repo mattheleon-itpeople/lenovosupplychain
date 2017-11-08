@@ -15,7 +15,7 @@ limitations under the License.
 ******************************************************************/
 
 // Date Created:
-// Author: David Medvedev
+// Author: David Medvedev + Leon Matthews
 // Organization: IT People Corporation
 // Last Update: Nov 08 2017
 package main
@@ -23,8 +23,12 @@ package main
 type Part struct {
 	PartNumber string `json:"partnumber"`
 	SupplierID string `json:"supplierid"`
-	RCType     string `json:"rctype"`
 	AuditInfo  AuditInfo
+}
+
+type PartDetail struct {
+	PartNumber  string `json:"partnumber"`
+	Description string `json:"description"`
 }
 
 type PurchaseOrder struct {
@@ -39,6 +43,11 @@ type Shipment struct {
 	SupplierID       string `json:"supplerId"`
 	PartSerialNumber string `json:"partSerialNumber"`
 	PONumber         string `json:"poNumber"`
+}
+
+type OrderStatus struct {
+	PONumber string `json:"poNumber"`
+	Status   string `json:"status"`
 }
 
 type AuditInfo struct {
