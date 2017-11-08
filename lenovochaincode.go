@@ -55,6 +55,15 @@ const (
 )
 
 /////////////////////////////////////////////////////
+// Constant for order status
+/////////////////////////////////////////////////////
+const (
+	OPEN     = "open"
+	CLOSED   = "closed"
+	REFUNDED = "refunded"
+)
+
+/////////////////////////////////////////////////////
 // Constant for All function name that will be called from invoke
 /////////////////////////////////////////////////////
 const (
@@ -67,7 +76,7 @@ const (
 	DUR  string = "deleteUser"
 )
 
-func (t *ReleaseCertChainCode) initMaps() {
+func (t *LenovoChainCode) initMaps() {
 	t.tableMap = make(map[string]int)
 	t.tableMap[BIT] = 3
 	t.funcMap = make(map[string]InvokeFunc)
