@@ -36,6 +36,8 @@ type LenovoChainCode struct {
 	funcMap  map[string]InvokeFunc
 }
 
+var logger = shim.NewLogger("lenovo_chaincode")
+
 // version
 const VERSION string = "version"
 
@@ -123,11 +125,11 @@ func CreateShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	shipment := Shipment{}
 	err = json.Unmarshal([]byte(args[0]), &shipment)
 	if err != nil {
-		return shim.Error("CreateShipment : Failed to convert arg[0] to a Shipment object")
+		return shim.Error("CreateShipment : Failed to convert arg[0] to a Shipment object: " + err.Error())
 	}
 
 	// Query and Retrieve the Full BaicInfo
-	keys := []string{shipment.shipmentNumber}
+	keys := []string{shipment.ShipmentNumber}
 
 	objectType := "PO"
 	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
@@ -137,7 +139,7 @@ func CreateShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	if Avalbytes != nil {
 		return shim.Error(fmt.Sprintf("CreateShipment() : "+
-			"ID for Shipment Number: %s already exist ", shipment.shipmentNumber))
+			"ID for Shipment Number: %s already exist ", shipment.ShipmentNumber))
 	}
 
 	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
@@ -157,7 +159,7 @@ func CreatePurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	purchaseOrder := PurchaseOrder{}
 	err = json.Unmarshal([]byte(args[0]), &purchaseOrder)
 	if err != nil {
-		return shim.Error("CreatePurchaseOrder : Failed to convert arg[0] to a PO object")
+		return shim.Error("CreatePurchaseOrder : Failed to convert arg[0] to a PO object: " + err.Error())
 	}
 
 	// Query and Retrieve the Full BaicInfo

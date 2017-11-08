@@ -47,7 +47,7 @@ func checkState(t *testing.T, stub *shim.MockStub, name string, value string) {
 	}
 }
 
-	func checkQuery(t *testing.T, stub *shim.MockStub, fcn string, name string, value string) {
+func checkQuery(t *testing.T, stub *shim.MockStub, fcn string, name string, value string) {
 	res := stub.MockInvoke("1", [][]byte{[]byte(fcn), []byte(name)})
 	if res.Status != shim.OK {
 		fmt.Println("Query ", name, "failed", string(res.Message))
@@ -71,9 +71,9 @@ func checkInvoke(t *testing.T, stub *shim.MockStub, args [][]byte) {
 	}
 }
 
-func TestSDM_Init(t *testing.T) {
-	scc := new(SDMChaincode)
-	stub := shim.NewMockStub("sdm", scc)
+func TestSCM_Init(t *testing.T) {
+	lcc := new(LenovoChainCode)
+	stub := shim.NewMockStub("ldm", lcc)
 
 	// Init cc_version=v0
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
@@ -81,9 +81,9 @@ func TestSDM_Init(t *testing.T) {
 	checkState(t, stub, "version", "v0")
 }
 
-func TestSDM_query_ccversion(t *testing.T) {
-	scc := new(SDMChaincode)
-	stub := shim.NewMockStub("sdm", scc)
+func TestSCM_query_ccversion(t *testing.T) {
+	lcc := new(LenovoChainCode)
+	stub := shim.NewMockStub("ldm", lcc)
 
 	// Init cc_version=v0
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
@@ -93,18 +93,32 @@ func TestSDM_query_ccversion(t *testing.T) {
 
 }
 
-func TestSDM_invoke_createSupplier(t *testing.T) {
-	scc := new(SDMChaincode)
-	stub := shim.NewMockStub("sdm", scc)
+func TestSCM_invoke_createPurchaseOrder(t *testing.T) {
+	lcc := new(LenovoChainCode)
+	stub := shim.NewMockStub("ldm", lcc)
 
 	// Init cc_version=v0
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
 	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createSupplierBasicInfo"), []byte("{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"poNumber\": \"1234\",\"partNumbers\": [\"1111\",\"2222\"],\"auditInfo\": {\"createBy\": \"Bob\",\"updatedBy\": \"Bob\"}}")})
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
+	//checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
+}
+
+func TestSCM_invoke_createShipment(t *testing.T) {
+	lcc := new(LenovoChainCode)
+	stub := shim.NewMockStub("ldm", lcc)
+
+	// Init cc_version=v0
+	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
+
+	// createSupplierBasicInfo for ITPC organization
+	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"partNumber\": \"4567\", \"supplierId\": \"supid1\", \"partSerialNumber\": \"pserial\", \"poNumber\": \"po1\"}")})
+
+	// validate supplier details of org ITPC with querySupplierBasicInfo
+	//checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
 }
 
 // func TestSDM_invoke_updateSupplier(t *testing.T) {
