@@ -234,7 +234,7 @@ func sendAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.Res
 func createSalesOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(nil)
 }
-func generateSippingNotice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func generateShippingNotice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(nil)
 }
 func generateGoodsReceived(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -254,10 +254,39 @@ func sendPayment(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 // Query Function
 ////////////////////////////////////////////////////////////////////////////
 
-func queryOrderByKey(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryOrderByOrderNumber(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var err error
+	var Orderbytes []byte
+	order := Order{}
+
+	if len(args) < 2 {
+		logger.Infof("queryOrderByOrderNumber requires two parameters (order number and originating company)")
+		return shim.Error("queryOrderByOrderNumber requires two parameters (order number and originating company)")
+	}
+	logger.Infof("queryOrderByOrderNumber : Arguments : %s, %s", args[0], args[1])
+
+	Orderbytes, err = dbapi.QueryObject(stub, "ORD, "[args[0], args[1]])
+
+	if err != nil {
+		logger.Infof("queryOrderByOrderNumber fail to retrieve order (order number: %s, company %s )", args[0], args[1])
+		return shim.Error("queryOrderByOrderNumber fail to retrieve order (order number: %s, company %s )", args[0], args[1])
+	}
+
+	err = json.Unmarshal(Orderbytes, &Order)
+	if err != nil {
+		logger.Infof("queryOrderByOrderNumber : Failed to convert arg[0] to an Order object: " + err.Error())
+		return shim.Error("queryOrderByOrderNumber : Failed to convert arg[0] to an Order object: " + err.Error())
+	}
+
+	return shim.Success(Orderbytes)
+}
+func queryAllOrders(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(nil)
 }
-func queryPartsByOrderNumber(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func queryOrderStatus(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func queryShipmentByOrderNumber(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(nil)
 }
 
