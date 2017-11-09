@@ -43,6 +43,8 @@ type Order struct {
 	SupplierID string              `json:"supplerId"`
 	Items      []OrderItem 		   `json:"items"`
 	AuditInfo  AuditInfo           `json:"auditInfo"`
+	From  string `json:from"`
+	To  string `json:to"`
 }
 
 
