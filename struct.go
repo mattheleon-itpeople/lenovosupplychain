@@ -38,19 +38,13 @@ type OrderItem struct {
 type UnitOfMeasure struct {
 }
 
-type PurchaseOrder struct {
-	PONumber   string              `json:"poNumber"`
+type Order struct {
+	OrderNumber   string           `json:"poNumber"`
 	SupplierID string              `json:"supplerId"`
 	Items      []OrderItem 		   `json:"items"`
 	AuditInfo  AuditInfo           `json:"auditInfo"`
 }
 
-type SalesOrder struct {
-	PONumber   string      `json:"poNumber"`
-	SupplierID string      `json:"supplerId"`
-	Items      []OrderItem `json:"items"`
-	AuditInfo  AuditInfo   `json:"auditInfo"`
-}
 
 type ShippedItem struct {
 	PartNumber   string `json:"partNumber"`
@@ -73,8 +67,8 @@ type AuditInfo struct {
 }
 
 type OrderStatus struct {
-		PONumber string `json:"poNumber"`
-		Status   string `json:"status"`
+	PONumber string `json:"poNumber"`
+	Status   string `json:"status"`
 }
 
 type RecievedItem struct {
@@ -83,12 +77,18 @@ type RecievedItem struct {
 	ReceivingStatus string `json:"receivingStatus"`
 }
 
-type ACK struct {
+type Acknowledgement struct {
 	PONumber string `json:"poNumber"`
 	SupplierID string `json:"supplierId"`
 }
 
 type POInvoice struct {
+	PONumber string `json:"poNumber"`
+	Items      []OrderItem `json:"items"`
+}
+
+
+type ReturnNotice struct {
 	PONumber string `json:"poNumber"`
 	Items      []OrderItem `json:"items"`
 }
