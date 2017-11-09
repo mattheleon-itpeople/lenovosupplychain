@@ -118,7 +118,7 @@ func getVersion(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(version)
 }
 
-func CreateShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func createShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
 	logger.Infof("CreateShipment : Arguments : %s", args[0])
@@ -152,7 +152,7 @@ func CreateShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 }
 
-func CreatePurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
 	logger.Infof("CreatePurchaseOrder : Arguments : %s", args[0])
@@ -191,7 +191,7 @@ func CreatePurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 // Key will be buyer unique-id
 ////////////////////////////////////////////////////////////////////////////
 
-func ShipPart(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func shipPart(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	var err error
 	var Avalbytes []byte
@@ -226,6 +226,39 @@ func ShipPart(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	return shim.Success(nil)
 
+}
+
+func sendAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func createSalesOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func generateSippingNotice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func generateGoodsReceived(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func createReturnNotice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func createInvoice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func sendPayment(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+
+////////////////////////////////////////////////////////////////////////////
+// Query Function
+////////////////////////////////////////////////////////////////////////////
+
+func queryOrderByKey(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
+}
+func queryPartsByOrderNumber(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	return shim.Success(nil)
 }
 
 ////////////////////////////////////////////////////////////////////////////
