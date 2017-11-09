@@ -15,39 +15,55 @@ limitations under the License.
 ******************************************************************/
 
 // Date Created:
-// Author: David Medvedev + Leon Matthews
+// Author: Dinesh
 // Organization: IT People Corporation
-// Last Update: Nov 08 2017
+// Last Update: Aug 08 2017
+// this file will contain all  go structure used on this project
 package main
 
 type Part struct {
-	PartNumber string `json:"partnumber"`
-	SupplierID string `json:"supplierid"`
-	AuditInfo  AuditInfo
+	PartNumber string    `json:"partnumber"`
+	ManufID    string    `json:"manufid"`
+	RCType     string    `json:"rctype"`
+	AuditInfo  AuditInfo `json:"auditInfo"`
 }
 
-type PartDetail struct {
-	PartNumber  string `json:"partnumber"`
-	Description string `json:"description"`
+//TODO
+type OrderItem struct {
+	PartNumber      string `json:"partNumber"`
+	ItemCondition   string `json:"itemCondition"` //New or Refurbished
+	Quantity        int    `json:"quantity"`      //add unit of measurement
+	ReceivingStatus string `json:"receivingStatus"`
+}
+
+type UnitOfMeasure struct {
 }
 
 type PurchaseOrder struct {
-	PONumber    string   `json:"poNumber"`
-	PartNumbers []string `json:"parts"`
-	AuditInfo   AuditInfo
+	PONumber   string              `json:"poNumber"`
+	SupplierID string              `json:"supplerId"`
+	Items      []PurchaseOrderItem `json:"items"`
+	AuditInfo  AuditInfo           `json:"auditInfo"`
+}
+
+type SalesOrder struct {
+	PONumber   string      `json:"poNumber"`
+	SupplierID string      `json:"supplerId"`
+	Items      []OrderItem `json:"items"`
+	AuditInfo  AuditInfo   `json:"auditInfo"`
+}
+
+type ShippedItem struct {
+	PartNumber   string `json:"partNumber"`
+	SerialNumber string `json:"serialNumber"`
 }
 
 type Shipment struct {
-	ShipmentNumber   string `json:"shipmentNumber"`
-	PartNumber       string `json:"partNumber"`
-	SupplierID       string `json:"supplerId"`
-	PartSerialNumber string `json:"partSerialNumber"`
-	PONumber         string `json:"poNumber"`
-}
-
-type OrderStatus struct {
-	PONumber string `json:"poNumber"`
-	Status   string `json:"status"`
+	ShipmentNumber string        `json:"shipmentNumber"`
+	TrackingNumber string        `json:"trackingNumber"`
+	SupplierID     string        `json:"supplerId"`
+	ShippedItems   []ShippedItem `json:"partSerialNumber"`
+	PONumber       string        `json:"poNumber"`
 }
 
 type AuditInfo struct {
