@@ -15,9 +15,9 @@ limitations under the License.
 ******************************************************************/
 
 // Date Created:
-// Author: Dinesh
+// Author: David Medvedev + Leon Matthews
 // Organization: IT People Corporation
-// Last Update: Aug 08 2017
+// Last Update: Nov 10 2017
 // this file will contain all  go structure used on this project
 package main
 
@@ -58,6 +58,7 @@ type Shipment struct {
 	SupplierID     string        `json:"supplierId"`
 	ShippedItems   []ShippedItem `json:"shippedItems"`
 	OrderNumber    string        `json:"OrderNumber"`
+	DeliveryDate   string 		 `json:"deliveryDate"`
 }
 
 type AuditInfo struct {
@@ -81,6 +82,7 @@ type RecievedItem struct {
 type Acknowledgement struct {
 	OrderNumber string `json:"OrderNumber"`
 	SupplierID  string `json:"supplierId"`
+	Message string `json:"message"`
 }
 
 type Invoice struct {
