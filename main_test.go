@@ -101,10 +101,13 @@ func TestSCM_invoke_createPurchaseOrder(t *testing.T) {
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
 	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"poNumber\": \"1234\",\"partNumbers\": [\"1111\",\"2222\"],\"auditInfo\": {\"createBy\": \"Bob\",\"updatedBy\": \"Bob\"}}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"orderNumber\": \"1234\",\"From\": \"Manu1\", \"To\": \"Lenovo\",\"partNumbers\": [\"1111\",\"2222\"],\"auditInfo\": {\"createBy\": \"Bob\",\"updatedBy\": \"Bob\"}}")})
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
-	//checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
+	//checkQuery(t, stub, "queryOrder", "{\"orderNumber\": \"1234\", \"From\": \"Manu1\", \"To\": \"Lenovo\"}", "")
+
+	// validate supplier details of org ITPC with querySupplierBasicInfo
+	checkQuery(t, stub, "queryOrderByOrderNumber", "{\"orderNumber\": \"1234\", \"From\": \"Manu1\" }", "")
 }
 
 func TestSCM_invoke_createShipment(t *testing.T) {
