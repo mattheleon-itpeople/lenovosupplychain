@@ -135,35 +135,75 @@ func getVersion(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 func createShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
-	logger.Infof("CreateShipment : Arguments : %s", args[0])
-	shipment := Shipment{}
-	err = json.Unmarshal([]byte(args[0]), &shipment)
+	Shipment := Shipment{}
+	Order := Order{}
+
+	if len(args) < 1 {
+		return shim.Error("Not enough parameters")
+	}
+	err = json.Unmarshal([]byte(args[0]), &Shipment)
 	if err != nil {
-		return shim.Error("CreateShipment : Failed to convert arg[0] to a Shipment object: " + err.Error())
+		return shim.Error("Failed to unmarshal shipment. " + args[0])
 	}
 
-	// Query and Retrieve the Full BaicInfo
-	keys := []string{shipment.ShipmentNumber}
+	from := Shipment.From
+	to := Shipment.To
+	shipNumber := Shipment.ShipmentNumber
 
-	objectType := "SHP"
+	keys := []string{to, from, shipNumber}
+
+	objectType := "PO"
+	//TODO: QUERY ORDER LOOP THROUGH ORDER ITEM
 	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
+
 	if err != nil {
-		return shim.Error("CreateShipment() : Failed to query shipment object")
+		return shim.Error("Failed to retrieve order with provided shipping notice. " + err.Error())
+	}
+	if &Avalbytes == nil {
+		return shim.Error("No order was retrieved. " + err.Error())
+	}
+	err = json.Unmarshal(Avalbytes, &Order)
+	if err != nil {
+		return shim.Error("Failed to marshal Sales Order. " + string(Avalbytes))
 	}
 
-	if Avalbytes != nil {
-		return shim.Error(fmt.Sprintf("CreateShipment() : "+
-			"ID for Shipment Number: %s already exist ", shipment.ShipmentNumber))
+	//items := Order.Items
+
+	quantity := make(map[string][]int)
+
+	for _, i := range Order.Items {
+		quantity[i.PartNumber] = append(quantity[i.PartNumber], i.Quantity)
+		fmt.Println(quantity[i.PartNumber])
 	}
+
+	/*
+	   if len(Order.orderLine) != len(Shipment.ShippedItems) {
+	       return shim.Error("***** Order quantity does not match shipping quantity. Changing order status to: pending review. *****")
+	   }
+
+	   for iterator < len(Order.orderLine) {
+
+	       // TAKE ITERATOR CREATE MAP OF BOTH SIDES AND COMPARE
+
+	       //orderQuantity := Order.quantity
+	       //shipQuantity := Shipment.quantity
+	           iterator += iterator
+	       }
+	       iterator += iterator
+
+
+	   if orderQuantity != shipQuantity {
+
+	   }
+	*/
 
 	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
 	if err != nil {
-		logger.Errorf("CreateShipment : Error inserting Object into LedgerState %s", err)
-		return shim.Error("CreateShipment : Shipment Update failed")
+		logger.Errorf("shipPart : Error inserting Shipment of parts into LedgerState %s", err)
+		return shim.Error("shipPart : Shipping part failed")
 	}
 
 	return shim.Success(nil)
-
 }
 
 func createOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
@@ -231,7 +271,7 @@ func createReturnNotice(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	// Query and Retrieve the Full BaicInfo
 	keys := []string{returnNotice.OrderNumber}
 
-	objectType := "RET"
+	objectType := "return"
 	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
 	if err != nil {
 		return shim.Error("CreateReturnNotice() : Failed to query return order object")
@@ -263,10 +303,10 @@ func createInvoice(stub shim.ChaincodeStubInterface, args []string) pb.Response 
 	// Query and Retrieve the Full BaicInfo
 	keys := []string{invoice.OrderNumber}
 
-	objectType := "INV"
+	objectType := "invoice"
 	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
 	if err != nil {
-		return shim.Error("CreateInvoice() : Failed to query invoice")
+		return shim.Error("CreateInvoice() : Failed to query shipment object")
 	}
 
 	if Avalbytes != nil {
@@ -454,56 +494,6 @@ func queryShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response 
 	}
 
 	return shim.Success(Shipmentbytes)
-}
-
-////////////////////////////////////////////////////////////////////////////
-// Query a specific Shipment with a partial key
-////////////////////////////////////////////////////////////////////////////
-func queryAllShipments(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	var err error
-	var shipments []Shipment
-	var shipment Shipment = Shipment{}
-	var query = QueryShipment{}
-	var i = 0
-
-	logger.Infof("Received %s as arguments  ")
-
-	if len(args) < 1 {
-		logger.Infof("queryAllShipments requires request paramater")
-		return shim.Error("queryAllShipments requires request parameter")
-	}
-
-	logger.Infof("queryAllShipments : Arguments : %s", args[0])
-
-	keys := []string{args[0]}
-
-	rs, err := dbapi.GetList(stub, "SHP", keys)
-
-	if err != nil {
-		logger.Infof("queryAllShipments fail to retrieve orders: %s", args[0])
-		return shim.Error("queryAllShipments fail to retrieve orders: )" + args[0])
-	}
-
-	for i = 0; rs.HasNext(); i++ {
-		myKV, err := rs.Next()
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-
-		err = json.Unmarshal(myKV.Value, &shipment)
-
-		if err != nil {
-			logger.Infof("queryAllShipments fail to marshal order: %s", err.Error())
-			return shim.Error("queryAllShipments fail to marshal order: " + err.Error())
-		}
-
-		if shipment.From == query.Requestor || shipment.To == query.Requestor {
-			shipments = append(shipments, shipment)
-		}
-	}
-
-	jsonRows, err := json.Marshal(shipments)
-	return shim.Success(jsonRows)
 }
 
 ////////////////////////////////////////////////////////////////////////////

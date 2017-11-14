@@ -12,4 +12,6 @@ type Shipment struct {
 	SupplierID     string        `json:"supplierId"`
 	ShippedItems   []ShippedItem `json:"shippedItems"`
 	OrderNumber    string        `json:"OrderNumber"`
+	From           string        `json:"from"`
+	To             string        `json:"to"`
 }
