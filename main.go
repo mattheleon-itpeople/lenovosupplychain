@@ -23,6 +23,8 @@ import (
 	pb "github.com/hyperledger/fabric/protos/peer"
 )
 
+var logger = shim.NewLogger("lenovosupplychain")
+
 func init() {
 	logger.SetLevel(shim.LogDebug)
 }
