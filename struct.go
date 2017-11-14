@@ -50,6 +50,7 @@ type Order struct {
 type ShippedItem struct {
 	PartNumber   string `json:"partNumber"`
 	SerialNumber string `json:"serialNumber"`
+	Quantity int		`json:"quantity"`
 }
 
 type Shipment struct {
@@ -59,6 +60,8 @@ type Shipment struct {
 	ShippedItems   []ShippedItem `json:"shippedItems"`
 	OrderNumber    string        `json:"OrderNumber"`
 	DeliveryDate   string 		 `json:"deliveryDate"`
+	From   		   string 		 `json:"from"`
+	To   		   string 		 `json:"to"`
 }
 
 type AuditInfo struct {

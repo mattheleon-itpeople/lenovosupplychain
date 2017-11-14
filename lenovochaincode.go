@@ -143,7 +143,7 @@ func createShipment(stub shim.ChaincodeStubInterface, args[] string) pb.Response
         shipment.ShipmentNumber
     }
 
-    objectType: = "SHP"
+    objectType: = "PO"
     Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
     if err != nil {
         return shim.Error("CreateShipment() : Failed to query shipment object")
@@ -200,41 +200,125 @@ func createOrder(stub shim.ChaincodeStubInterface, args[] string) pb.Response {
 
 }
 
-////////////////////////////////////////////////////////////////////////////
-// List BasicEntityInfo data  about supplyer owned/invited by  specific Buyer.
-// Key will be buyer unique-id
-////////////////////////////////////////////////////////////////////////////
-
+/********************************************************************************************
+ * 1 order 1 full shipment only quantity													*
+ * TODO: Check price, quantity, delivery date, partial or full shipment, unit of measure	*																							*
+ *	if len(orderline) len(ship) for(part number & orderline compare quant)																						*
+ *																							*
+ * Verify shipping notice against order - Send ASN and ship part							*
+ * Give these arguments to the key array in this order:										*
+ * - from -> Shipment from field															*	
+ * - to -> Shipment to field																*
+ * - orderNumber -> Shipment order number field												*
+ * - shipQuantity -> Shipment quantity amount												*		
+ *																							*
+ * Query object using "SHP" object type and retrieve values based on:						*
+ * @param = Shipment.OrderNumber															*
+ * 																							*
+ * Retrieve order json object and extrapolate quantity value								*
+ * Validate quantity is equivalent to shipping notice and proceed with ASN and shipment.    *
+ * Using UpdateObject from dbapi, write the ACK into the ledger. Otherwise return Errors.	*
+ ********************************************************************************************/
 func shipPart(stub shim.ChaincodeStubInterface, args[] string) pb.Response {
+	var err error
+    var Avalbytes[] byte
+    shippingNotice: = ShippingNotice {}
+    err = json.Unmarshal([] byte(args[0]), &ShippingNotice)
+    if err != nil {
+        return shim.Error("Failed to retrieve shipping notice with provided order number. " + err.Error())
+	}
+
+	from := Shipment.From
+	to := Shipment.To
+	orderNumber := Shipment.OrderNumber
+
+	iterator := 0
+	
+
+    keys: = [] string {
+		from,
+		to,
+		orderNumber
+    }
+
+	objectType: = "PO"
+	//TODO: QUERY ORDER LOOP THROUGH ORDER ITEM
+	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
+	err = json.Unmarshal(byte(args[0]), &Order)
+	if err != nil {
+        return shim.Error("Failed to retrieve order with provided shipping notice. " + err.Error())
+	}
+	
+	Orders := dbapi.getList(stub, objectType, keys)
+
+	quantity := make(map[string][]*Orders)
+	for _, i := range Order {
+			quantity[i.partNumber] = append(quantity[i.partNumber], i.quantity)
+			fmt.println(quantity[i.partNumber])
+	}
+
+	/*
+	if len(Order.orderLine) != len(Shipment.ShippedItems) {
+		return shim.Error("***** Order quantity does not match shipping quantity. Changing order status to: pending review. *****")
+	}
+	
+	for iterator < len(Order.orderLine) {
+		
+		// TAKE ITERATOR CREATE MAP OF BOTH SIDES AND COMPARE
+
+		//orderQuantity := Order.quantity
+		//shipQuantity := Shipment.quantity
+			iterator += iterator
+		}
+		iterator += iterator
+
+
+	if orderQuantity != shipQuantity {
+       
+	}
+	*/
+	
+	err = dbapi.UpdateObject(stub, objectType, keys, [] byte(args[0]))
+    if err != nil {
+        logger.Errorf("shipPart : Error inserting Shipment of parts into LedgerState %s", err)
+        return shim.Error("shipPart : Shipping part failed")
+    }
+	
     return shim.Success(nil)
 }
 
+
+/********************************************************************************************
+ * Sends an acknowledgement upon the recieving of a particular Purchase Order.				*
+ * Give these arguments to the args array in this order:									*
+ * - args[0] -> order number																*	
+ * - args[1] -> from whom																	*
+ * - args[2] -> to whom																		*		
+ *																							*
+ * Using UpdateObject from dbapi, write the ACK into the ledger. Otherwise return Errors.	*
+ ********************************************************************************************/
 func sendAcknowledgement(stub shim.ChaincodeStubInterface, args[] string) pb.Response {
-    var err error
-    var Avalbytes[] byte
-    logger.Infof("SendAcknowledgement : Arguments : %s", args[0])
-    acknowledgement: = Acknowledgement {}
-    err = json.Unmarshal([] byte(args[0]), & acknowledgement)
-    if err != nil {
-        return shim.Error("sendAcknowledgement : Failed to convert arg[0] to a ACK object: " + err.Error())
-    }
+	// TODO: Pass order as object using query instead of args
 
-    keys: = [] string {
-        Order.OrderNumber
-    }
-
-    objectType: = "PO"
-    Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
-
-    if err != nil {
-        return shim.Error("Order does not exist or was not invoiced yet.")
-    }
-
-    if Avalbytes != nil {
-        return shim.Error(fmt.Sprintf("sendAcknowledgement() : " +
-            "Acknolwedgement of Order was already sent ", Order.OrderNumber))
+	// check valid numnber of args
+	if len(args) != 3 {
+		return shim.Error("Incorrect number of arguments, expecting 3. ('Order Number', 'From', 'To')")
 	}
-	
+
+	// extract args
+	from := args[0]
+	to := args[1]
+	orderNum := args[2]
+
+	// assign keys from args array
+	keys = [] string {
+		from, 
+		to,
+		orderNum
+	}
+
+	// pass in object type - invoke dbapi's UpdateObject query and validate
+	objectType = "PO"
 	err = dbapi.UpdateObject(stub, objectType, keys, [] byte(args[0]))
     if err != nil {
         logger.Errorf("sendAcknowledgement : Error inserting ACK into LedgerState %s", err)
@@ -242,6 +326,8 @@ func sendAcknowledgement(stub shim.ChaincodeStubInterface, args[] string) pb.Res
     }
 
     return shim.Success(nil)
+
+    
 }
 func generateShippingNotice(stub shim.ChaincodeStubInterface, args[] string) pb.Response {
 	var err error
