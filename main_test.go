@@ -118,7 +118,7 @@ func TestSCM_invoke_createShipment(t *testing.T) {
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
 	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"partNumber\": \"4567\", \"supplierId\": \"supid1\", \"partSerialNumber\": \"pserial\", \"poNumber\": \"po1\"}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"supplierId\": \"supid1\", \"ordernumber\": \"1234\", \"from\": \"lenovo\", \"to\": \"somewhere\" }")})
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
 	//checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
