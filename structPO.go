@@ -21,11 +21,12 @@ type OrderItem struct {
 type OrderLine struct {
 	Items     []ItemDetails `json:"items"`
 	AuditInfo AuditInfo     `json:"auditInfo"`
-	From      string        `json:"from"`
-	To        string        `json:"to"`
 }
 
 type PurchaseOrder struct {
 	OrderHeader
+	From string `json:"from"`
+	To   string `json:"to"`
 	OrderLine
+	Status string `json:"status"`
 }
