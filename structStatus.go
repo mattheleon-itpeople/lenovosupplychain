@@ -1,6 +1,7 @@
 package main
 
 type OrderStatus struct {
-	OrderNumber string `json:"OrderNumber"`
+	ObjectType  string `json:"doctype"`
+	OrderNumber string `json:"orderNumber"`
 	Status      string `json:"status"`
 }

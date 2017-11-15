@@ -60,6 +60,7 @@ func checkQuery(t *testing.T, stub *shim.MockStub, fcn string, name string, valu
 
 	if string(res.Payload) != value {
 		fmt.Println("Query value", name, "was not", value, "as expected")
+		fmt.Println("Payload : " + string(res.Payload))
 		t.FailNow()
 	}
 }
@@ -67,7 +68,7 @@ func checkQuery(t *testing.T, stub *shim.MockStub, fcn string, name string, valu
 func checkInvoke(t *testing.T, stub *shim.MockStub, args [][]byte) {
 	res := stub.MockInvoke("1", args)
 	if res.Status != shim.OK {
-		fmt.Println("Invoke", args, "failed", string(res.Message))
+		fmt.Println("Invoke", string(args[0]), "failed", string(res.Message))
 		t.FailNow()
 	}
 }
@@ -102,13 +103,13 @@ func TestSCM_invoke_createPurchaseOrder(t *testing.T) {
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
 	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createOrder"), []byte("{\"orderNumber\": \"1234\",\"supplierID\": \"Manu1\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"purchaseOrderNumber\": \"1234\",\"supplierId\": \"Manu1\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")})
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryOrder", "{\"orderNumber\": \"1234\", \"Requestor\": \"Manu1\", \"Partner\": \"Lenovo\"}", "{\"orderNumber\": \"1234\",\"supplierID\": \"Manu1\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")
+	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"purchaseOrderNumber\": \"1234\",\"supplierId\": \"Manu1\", \"originalPONumber\",\"\",\"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryOrderByOrderNumber", "{\"orderNumber\":\"1234\", \"Requestor\":\"Manu1\"}", "[{\"orderNumber\":\"1234\",\"supplierId\":\"Manu1\",\"items\":[{\"partNumber\":\"1111\",\"itemCondition\":\"\",\"quantity\":100},{\"partNumber\":\"2222\",\"itemCondition\":\"\",\"quantity\":200}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"from\":\"Manu1\",\"to\":\"Lenovo\"}]")
+	checkQuery(t, stub, "queryOrderByOrderNumber", "{\"orderNumber\":\"1234\", \"requestor\":\"Manu1\"}", "[{\"purchaseOrderNumber\":\"1234\",\"supplierId\":\"Manu1\",\"originalPONumber\": \"\",\"items\":[{\"partNumber\":\"1111\",\"itemCondition\":\"\",\"quantity\":100,\"pricePerUnit\":0,\"unitOfMeasure\":\"\",\"totalLinePrice\":0},{\"partNumber\":\"2222\",\"itemCondition\":\"\",\"quantity\":200,\"pricePerUnit\":0,\"unitOfMeasure\":\"\",\"totalLinePrice\":0}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"from\":\"Manu1\",\"to\":\"Lenovo\"}]")
 
 }
 
@@ -120,11 +121,16 @@ func TestSCM_invoke_createShipment(t *testing.T) {
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
 	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"4321\",\"partNumber\": \"4567\", \"supplierId\": \"supid1\", \"partSerialNumber\": \"pserial\", \"poNumber\": \"po1\"}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"purchaseOrderNumber\": \"1234\",\"supplierID\": \"Manu1\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")})
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryShipment", "{\"shipmentNumber\":\"4321\", \"Requestor\":\"supid1\"}", "[{\"orderNumber\":\"1234\",\"supplierId\":\"Manu1\",\"items\":[{\"partNumber\":\"1111\",\"itemCondition\":\"\",\"quantity\":100},{\"partNumber\":\"2222\",\"itemCondition\":\"\",\"quantity\":200}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"from\":\"Manu1\",\"to\":\"Lenovo\"}]")
+	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"Requestor\": \"Manu1\", \"Partner\": \"Lenovo\"}", "{\"purchaseOrderNumber\": \"1234\",\"supplierID\": \"Manu1\", \"originalPONumber\": \"\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")
 
+	// createSupplierBasicInfo for ITPC organization
+	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"supplierId\": \"supid1\", \"ordernumber\": \"0001\", \"from\": \"Lenovo\", \"to\": \"Manu1\"}")})
+	// validate supplier details of org ITPC with querySupplierBasicInfo
+	//checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
+}
 
 // func TestSDM_invoke_updateSupplier(t *testing.T) {
 // 	scc := new(SDMChaincode)

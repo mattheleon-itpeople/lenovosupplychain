@@ -1,6 +1,7 @@
 package main
 
 type Invoice struct {
-	OrderNumber string      `json:"OrderNumber"`
-	Items       []OrderItem `json:"items"`
+	ObjectType  string        `json:"doctype"`
+	OrderNumber string        `json:"orderNumber"`
+	Items       []ItemDetails `json:"items"`
 }
