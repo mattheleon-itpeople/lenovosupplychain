@@ -1,27 +1,27 @@
+//QueryOrder : definition of Query Order
+//structure to retrieve order from ledger
+//###########################################
+
 package main
 
-/*#########################################
-Query Struct definitiosn
-###########################################
-*/
 type QueryOrder struct {
-	OrderNumber string `json:"OrderNumber"`
-	Requestor   string `json:"Requestor"`
-	Partner     string `json:"Partner"`
+	OrderNumber string `json:"orderNumber"`
+	Requestor   string `json:"requestor"`
+	Partner     string `json:"partner"`
 }
 
 type QueryShipment struct {
-	ShipmentNumber string `json:"shipmentnumber"`
-	Requestor      string `json:"Requestor"`
-	Partner        string `json:"Partner"`
+	ShipmentNumber string `json:"shipmentNumber"`
+	Requestor      string `json:"requestor"`
+	Partner        string `json:"partner"`
 }
 
 type QueryField struct {
-	FieldName  string `json:"fieldname"`
-	FieldValue string `json:"fieldvalue"`
+	FieldName  string `json:"fieldName"`
+	FieldValue string `json:"fieldValue"`
 }
 
 type RichQuery struct {
-	QueryName   string       `json:"queryname"`
-	QueryFields []QueryField `json:"queryfields"`
+	QueryName   string       `json:"queryName"`
+	QueryFields []QueryField `json:"queryFields"`
 }
