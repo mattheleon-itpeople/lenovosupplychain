@@ -58,9 +58,10 @@ const (
 // Constant for PurchaseOrder status
 /////////////////////////////////////////////////////
 const (
-	OPEN     = "open"
-	CLOSED   = "closed"
-	REFUNDED = "refunded"
+	OPEN         = "open"
+	CLOSED       = "closed"
+	REFUNDED     = "refunded"
+	ACKNOWLEDGED = "acknowledged"
 )
 
 /////////////////////////////////////////////////////
@@ -78,6 +79,7 @@ const (
 	GV   string = "getVersion"
 	CPO  string = "createPurchaseOrder"
 	CSO  string = "createShipment"
+	CACK string = "createAcknowledgement"
 	SHPT string = "shipPart"
 	CUR  string = "createUser"
 	UUR  string = "updateUser"
@@ -96,6 +98,7 @@ func (t *LenovoChainCode) initMaps() {
 	t.funcMap[GV] = getVersion
 	t.funcMap[CPO] = createPurchaseOrder
 	t.funcMap[CSO] = createShipment
+	t.funcMap[CACK] = createAcknowledgement
 	t.funcMap[SHPT] = shipPart
 	t.funcMap[QO] = queryPurchaseOrder
 	t.funcMap[QOBN] = queryOrderByOrderNumber
@@ -215,6 +218,7 @@ func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	if err != nil {
 		return shim.Error("CreatePurchaseOrder : Failed to convert arg[0] to a PurchaseOrder: " + err.Error())
 	}
+	fmt.Println("Purchase order " + PurchaseOrder.To)
 
 	// Query and Retrieve the Full BaicInfo
 	keys := []string{PurchaseOrder.From, PurchaseOrder.To, PurchaseOrder.PONumber}
@@ -249,7 +253,49 @@ func shipPart(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(nil)
 }
 
-func sendAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+
+	var orderBytes []byte
+	var ackBytes []byte
+	acknowledgement := Acknowledgement{}
+	err := json.Unmarshal([]byte(args[0]), &acknowledgement)
+
+	if len(args) < 1 {
+		return shim.Error("sendAcknowledgement : requires an Acknowledgement document")
+	}
+	logger.Infof("CreateAckowledgement : Arguments : %s", args[0])
+
+	if err != nil {
+		return shim.Error("sendAcknowledgement : Failed to convert arg[0] to an Acknolwdgement notice: " + err.Error())
+	}
+	switch acknowledgement.DocumentType {
+	case "PO":
+		keys := []string{acknowledgement.To, acknowledgement.From, acknowledgement.DocumentNumber}
+		order, err := retrieveAndMarshalPOObject(stub, keys)
+		if err != nil {
+			return shim.Error("sendAcknowledgement() - no existing Purchase Order Number " + acknowledgement.DocumentNumber)
+		}
+
+		/*Update order to show Acknowledgement */
+		order.Status = ACKNOWLEDGED
+		orderBytes, err = json.Marshal(order)
+		if err != nil {
+			return shim.Error("sendAcknowledgement() - failed to unmarshal existing Purchase Order Number " + acknowledgement.DocumentNumber)
+		}
+		err = dbapi.UpdateObject(stub, "PO", keys, orderBytes)
+		if err != nil {
+			return shim.Error("sendAcknowledgement() - failed to update existing Purchase Order Number " + acknowledgement.DocumentNumber)
+		}
+		aKeys := []string{acknowledgement.From, acknowledgement.To, acknowledgement.DocumentNumber}
+		ackBytes, err = json.Marshal(acknowledgement)
+		if err != nil {
+			return shim.Error("sendAcknowledgement() - failed to update existing Purchase Order Number " + acknowledgement.DocumentNumber)
+		}
+		dbapi.UpdateObject(stub, "ACK", aKeys, ackBytes)
+
+	default:
+		return shim.Error("sendAcknowledgement - Ack for Doctype " + acknowledgement.DocumentType + " not yet implemented")
+	}
 	return shim.Success(nil)
 }
 func generateShippingNotice(stub shim.ChaincodeStubInterface, args []string) pb.Response {

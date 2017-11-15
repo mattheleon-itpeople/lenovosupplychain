@@ -103,13 +103,32 @@ func TestSCM_invoke_createPurchaseOrder(t *testing.T) {
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
 	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"purchaseOrderNumber\": \"1234\",\"supplierId\": \"Manu1\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")})
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"purchaseOrderNumber\": \"1234\",\"supplierId\": \"Manu1\", \"originalPONumber\",\"\",\"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")
+	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")
 
 	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryOrderByOrderNumber", "{\"orderNumber\":\"1234\", \"requestor\":\"Manu1\"}", "[{\"purchaseOrderNumber\":\"1234\",\"supplierId\":\"Manu1\",\"originalPONumber\": \"\",\"items\":[{\"partNumber\":\"1111\",\"itemCondition\":\"\",\"quantity\":100,\"pricePerUnit\":0,\"unitOfMeasure\":\"\",\"totalLinePrice\":0},{\"partNumber\":\"2222\",\"itemCondition\":\"\",\"quantity\":200,\"pricePerUnit\":0,\"unitOfMeasure\":\"\",\"totalLinePrice\":0}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"from\":\"Manu1\",\"to\":\"Lenovo\"}]")
+	checkQuery(t, stub, "queryOrderByOrderNumber", "{\"orderNumber\":\"1234\", \"requestor\":\"Manu1\"}", "[{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"\"}]")
+
+}
+
+func TestSCM_invoke_createAcknowledgement(t *testing.T) {
+	lcc := new(LenovoChainCode)
+	stub := shim.NewMockStub("ldm", lcc)
+
+	// Init cc_version=v0
+	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
+
+	// createSupplierBasicInfo for ITPC organization
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")})
+
+	// validate supplier details of org ITPC with querySupplierBasicInfo
+	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")
+
+	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), []byte("{\"doctype\":\"Acknowledgement\",\"documentType\":\"PO\",\"documentNumber\":\"1234\",\"from\":\"Lenovo\",\"to\":\"Manu1\"}")})
+
+	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"acknowledged\"}")
 
 }
 
@@ -121,10 +140,9 @@ func TestSCM_invoke_createShipment(t *testing.T) {
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
 	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"purchaseOrderNumber\": \"1234\",\"supplierID\": \"Manu1\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")})
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"Requestor\": \"Manu1\", \"Partner\": \"Lenovo\"}", "{\"purchaseOrderNumber\": \"1234\",\"supplierID\": \"Manu1\", \"originalPONumber\": \"\", \"items\": [{\"partNumber\":\"1111\",\"quantity\":100},{\"partNumber\": \"2222\", \"quantity\": 200}], \"From\": \"Manu1\", \"To\": \"Lenovo\"}")
+	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")
 
 	// createSupplierBasicInfo for ITPC organization
 	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"supplierId\": \"supid1\", \"ordernumber\": \"0001\", \"from\": \"Lenovo\", \"to\": \"Manu1\"}")})
