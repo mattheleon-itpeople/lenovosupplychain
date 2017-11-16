@@ -35,6 +35,7 @@ type SalesOrder struct {
 	OrderHeader
 	From             string `json:"from"`
 	To               string `json:"to"`
+	OriginalOrderer  string `json:"originalOrderer"`
 	OriginalPONumber string `json:"originalPONumber"`
 	ShipTo           string `json:"shipTo"`
 	OrderLine

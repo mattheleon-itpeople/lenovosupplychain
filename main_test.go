@@ -102,14 +102,14 @@ func TestSCM_invoke_createPurchaseOrder(t *testing.T) {
 	// Init cc_version=v0
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
-	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")})
+	// create the Purchase order (status open)
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"open\"}")
+	// query the purchase order (queryPurchaseOrder) and check status
+	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryOrderByOrderNumber", "{\"orderNumber\":\"1234\", \"requestor\":\"Manu1\"}", "[{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"open\"}]")
+	// Query a specific order number (without the "to") and receive an array (size: 1)
+	checkQuery(t, stub, "queryOrderByOrderNumber", purchaseOrderByNumberQuery, purchaseOrderByNumberResponse)
 
 }
 
@@ -120,19 +120,45 @@ func TestSCM_invoke_createAcknowledgement(t *testing.T) {
 	// Init cc_version=v0
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
-	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")})
+	// create the Purchase order (status open)
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"open\"}")
+	// query the purchase order (queryPurchaseOrder) and check status
+	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
 
-	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), []byte("{\"doctype\":\"Acknowledgement\",\"documentType\":\"PO\",\"documentNumber\":\"1234\",\"from\":\"Lenovo\",\"to\":\"Manu1\"}")})
+	//Create the acknowledgement of the Purchase order
+	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackPayload})
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"acknowledged\"}")
+	// check the purchase order (status acknowledged)
+	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
 
 }
+func TestSCM_invoke_createSalesOrder(t *testing.T) {
+	lcc := new(LenovoChainCode)
+	stub := shim.NewMockStub("ldm", lcc)
 
+	// Init cc_version=v0
+	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
+
+	// create the Purchase order (status open)
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
+
+	// query the purchase order (queryPurchaseOrder) and check status
+	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
+
+	//Create the acknowledgement of the Purchase order
+	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackPayload})
+
+	// check the purchase order (status acknowledged)
+	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
+
+	//create Sales  order (status open)
+	checkInvoke(t, stub, [][]byte{[]byte("createSalesOrder"), salesOrderPayload})
+
+	//query Sales order
+	checkQuery(t, stub, "querySalesOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
+
+}
 func TestSCM_invoke_createShipment(t *testing.T) {
 	lcc := new(LenovoChainCode)
 	stub := shim.NewMockStub("ldm", lcc)
@@ -140,22 +166,24 @@ func TestSCM_invoke_createShipment(t *testing.T) {
 	// Init cc_version=v0
 	checkInit(t, stub, [][]byte{[]byte("init"), []byte("v0")})
 
-	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), []byte("{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")})
+	// create the Purchase order (status open)
+	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"open\"}")
+	// query the purchase order (queryPurchaseOrder) and check status
+	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
 
-	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), []byte("{\"doctype\":\"Acknowledgement\",\"documentType\":\"PO\",\"documentNumber\":\"1234\",\"from\":\"Lenovo\",\"to\":\"Manu1\"}")})
+	//Create the acknowledgement of the Purchase order
+	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackPayload})
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\":\"PO\",\"ponumber\":\"1234\",\"supplierid\":\"supplier\",\"vendordescription\":\"Lenovo Laptop Builder\",\"poissuedate\":\"\",\"postartdate\":\"\",\"poenddate\":\"\",\"paymentterm\":\"\",\"paymentdays\":\"\",\"sownum\":\"\",\"currency\":\"\",\"from\":\"Manu1\",\"to\":\"Lenovo\",\"items\":[{\"commoditycode\":\"1234\",\"effectivedate\":\"\",\"unitprice\":\"12.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget1\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1250.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"},{\"commoditycode\":\"1235\",\"effectivedate\":\"\",\"unitprice\":\"15.50\",\"oldprice\":\"\",\"uom\":\"EA\",\"shorttext\":\"widget2\",\"orderedquantity\":\"100\",\"orderedvalue\":\"1500.00\",\"invoicedquantity\":\"\",\"invoicedvalue\":\"\",\"tobedeliveredvalue\":\"\",\"tobedeliveredquantity\":\"\"}],\"auditInfo\":{\"createdBy\":\"\",\"updatedBy\":\"\",\"createdTS\":\"\",\"updatedTS\":\"\"},\"status\":\"acknowledged\"}")
+	// check the purchase order (status acknowledged)
+	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
 
-	//createSupplierBasicInfo for ITPC organizationmber\": \"1234\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"partNumber\":\"1111\",\"shippedQuantity\":100},{\"partNumber\": \"2222\", \"shippedQuantity\": 200}], \"supplierId\": \"supid1\", \"ponumber\": \"0001\", \"distributorId\": \"Lenovo\", \"to\": \"Manu1\"}")})
-	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"partNumber\":\"1111\",\"shippedQuantity\":100},{\"partNumber\": \"2222\", \"shippedQuantity\": 200}], \"supplierId\": \"supid1\", \"ponumber\": \"0001\", \"distributorId\": \"Lenovo\", \"to\": \"Manu1\"}")})
+	//Invoke the createShipment function
+	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), shipmentPayload})
 
-	// validate supplier details of org ITPC with querySupplierBasicInfo
-	//checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
+	//Query the shipmentPayload
+	checkQuery(t, stub, "queryShipment", shipmentQuery, shipmentQueryResponse)
+
 }
 
 // func TestSDM_invoke_updateSupplier(t *testing.T) {
