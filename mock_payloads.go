@@ -30,6 +30,8 @@ var salesOrderQuery = "{\"orderNumber\": \"1234\", \"requestor\": \"Lenovo\", \"
  =======================================*/
 var ackPayload = []byte("{\"doctype\":\"Acknowledgement\",\"ackNumber\":\"4321\",\"documentType\":\"PO\",\"documentNumber\":\"1234\",\"from\":\"Lenovo\",\"to\":\"Manu1\"}")
 
+var ackSOPayload = []byte("{\"doctype\":\"Acknowledgement\",\"ackNumber\":\"4322\",\"documentType\":\"SO\",\"documentNumber\":\"1234\",\"from\":\"supid1\",\"to\":\"Lenovo\"}")
+
 /*=======================================
   SHipment Payloads (create/query)
  =======================================*/

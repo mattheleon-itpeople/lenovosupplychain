@@ -63,6 +63,9 @@ const (
 	CLOSED       = "closed"
 	REFUNDED     = "refunded"
 	ACKNOWLEDGED = "acknowledged"
+	INVOICED     = "invoiced"
+	PAID         = "paid"
+	RECEIVED     = "received"
 )
 
 /////////////////////////////////////////////////////
@@ -82,6 +85,7 @@ const (
 	CSO  string = "createSalesOrder"
 	CSP  string = "createShipment"
 	CACK string = "createAcknowledgement"
+	CI   string = "createInvoice"
 	SHPT string = "shipPart"
 	CUR  string = "createUser"
 	UUR  string = "updateUser"
@@ -103,6 +107,7 @@ func (t *LenovoChainCode) initMaps() {
 	t.funcMap[CSP] = createShipment
 	t.funcMap[CSO] = createSalesOrder
 	t.funcMap[CACK] = createAcknowledgement
+	t.funcMap[CI] = createInvoice
 	t.funcMap[SHPT] = shipPart
 	t.funcMap[QO] = queryPurchaseOrder
 	t.funcMap[QOBN] = queryOrderByOrderNumber
@@ -214,8 +219,7 @@ func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	funcName := getFunctionName()
 
 	/*Unmarshal the payload into a PurchaseOrder struct*/
-	err = json.Unmarshal([]byte(args[0]), &PurchaseOrder)
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &PurchaseOrder); err != nil {
 		return shim.Error(funcName + " : Failed to convert arg[0] to a PurchaseOrder: " + err.Error())
 	}
 
@@ -230,8 +234,7 @@ func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	keys := []string{PurchaseOrder.From, PurchaseOrder.To, PurchaseOrder.PONumber}
 
 	PurchaseOrderType := "PO"
-	Avalbytes, err = dbapi.QueryObject(stub, PurchaseOrderType, keys)
-	if err != nil {
+	if Avalbytes, err = dbapi.QueryObject(stub, PurchaseOrderType, keys); err != nil {
 		return shim.Error(funcName + " :  Failed to query PurchaseOrder object")
 	}
 
@@ -246,13 +249,11 @@ func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 	}
 
 	/*Serialize the Purchase Order - as we have updated the STATUS - and store in the Ledger*/
-	PurchaseOrderBytes, err = json.Marshal(PurchaseOrder)
-	if err != nil {
+	if PurchaseOrderBytes, err = json.Marshal(PurchaseOrder); err != nil {
 		return shim.Error(funcName + " :  Failed to serialize PurchaseOrder object")
 	}
 
-	err = dbapi.UpdateObject(stub, PurchaseOrderType, keys, PurchaseOrderBytes)
-	if err != nil {
+	if err = dbapi.UpdateObject(stub, PurchaseOrderType, keys, PurchaseOrderBytes); err != nil {
 		logger.Errorf(funcName+" :  Error inserting Object into LedgerState %s", err)
 		return shim.Error(funcName + " :  POs Update failed")
 	}
@@ -267,11 +268,11 @@ func createSalesOrder(stub shim.ChaincodeStubInterface, args []string) pb.Respon
 	var SalesOrderBytes []byte
 	var PurchaseOrderBytes []byte
 	SalesOrder := SalesOrder{}
+	PurchaseOrder := PurchaseOrder{}
 	funcName := getFunctionName()
 
 	/*Unmarshal the payload into a PurchaseOrder struct*/
-	err = json.Unmarshal([]byte(args[0]), &SalesOrder)
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &SalesOrder); err != nil {
 		return shim.Error(funcName + " : Failed to convert arg[0] to a SalesOrder: " + err.Error())
 	}
 
@@ -285,8 +286,7 @@ func createSalesOrder(stub shim.ChaincodeStubInterface, args []string) pb.Respon
 	keys := []string{SalesOrder.From, SalesOrder.To, SalesOrder.PONumber}
 
 	SalesOrderType := "SO"
-	Avalbytes, err = dbapi.QueryObject(stub, SalesOrderType, keys)
-	if err != nil {
+	if Avalbytes, err = dbapi.QueryObject(stub, SalesOrderType, keys); err != nil {
 		return shim.Error(funcName + " : Failed to query SalesOrder object")
 	}
 
@@ -299,29 +299,39 @@ func createSalesOrder(stub shim.ChaincodeStubInterface, args []string) pb.Respon
 	PurchaseOrderType := "PO"
 	poKeys := []string{SalesOrder.OriginalOrderer, SalesOrder.From, SalesOrder.OriginalPONumber}
 
-	PurchaseOrderBytes, err = dbapi.QueryObject(stub, PurchaseOrderType, poKeys)
-
-	if err != nil {
+	if PurchaseOrderBytes, err = dbapi.QueryObject(stub, PurchaseOrderType, poKeys); err != nil {
 		return shim.Error(funcName + " : Failed to query original PurchaseOrder object")
 	}
 
-	if PurchaseOrderBytes == nil {
-		return shim.Error(funcName + " : Failed to query original PurchaseOrder object")
+	if err = json.Unmarshal(PurchaseOrderBytes, &PurchaseOrder); err != nil {
+		return shim.Error(funcName + " : failed to marshal original Purchase Order " + SalesOrder.OriginalPONumber)
 	}
+	orderedquantity := make(map[string][]string)
 
+	for _, i := range PurchaseOrder.Items {
+		orderedquantity[i.CommodityCode] = append(orderedquantity[i.CommodityCode], i.OrderedQuantity)
+		orderedquantity[i.CommodityCode] = append(orderedquantity[i.CommodityCode], i.UOM)
+		fmt.Println(orderedquantity[i.CommodityCode])
+	}
+	for _, j := range SalesOrder.Items {
+		if quantity := orderedquantity[j.CommodityCode][0]; quantity != j.OrderedQuantity {
+			return shim.Error(funcName + " : Sales Order " + SalesOrder.PONumber + ", part number : " + j.CommodityCode + " invalid qauntity " + quantity)
+		}
+		if uom := orderedquantity[j.CommodityCode][1]; uom != j.UOM {
+			return shim.Error(funcName + " : Sales Order " + SalesOrder.PONumber + ", part number : " + j.CommodityCode + " invalid uom " + uom)
+		}
+	}
 	/*If the incoming Status  of the new Purchase Order is not OPEN, then reset it to OPEN */
 	if SalesOrder.Status != OPEN {
 		SalesOrder.Status = OPEN
 	}
 
 	/*Serialize the Purchase Order - as we have updated the STATUS - and store in the Ledger*/
-	SalesOrderBytes, err = json.Marshal(SalesOrder)
-	if err != nil {
+	if SalesOrderBytes, err = json.Marshal(SalesOrder); err != nil || SalesOrderBytes == nil {
 		return shim.Error(funcName + " : Failed to serialize SalesOrder object")
 	}
 
-	err = dbapi.UpdateObject(stub, SalesOrderType, keys, SalesOrderBytes)
-	if err != nil {
+	if err = dbapi.UpdateObject(stub, SalesOrderType, keys, SalesOrderBytes); err != nil {
 		logger.Errorf(funcName+" : Error inserting Object into LedgerState %s", err)
 		return shim.Error(funcName + " : POs Update failed")
 	}
@@ -348,20 +358,19 @@ func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.R
 
 	var orderBytes []byte
 	var ackBytes []byte
+	var err error
+
 	acknowledgement := Acknowledgement{}
 	funcName := getFunctionName()
 	/*=================================================================
 		  Unmarshal the Acknowledgement object and error if that fails
 			or we do not receieve a payload
 	    ================================================================= */
-	err := json.Unmarshal([]byte(args[0]), &acknowledgement)
 
 	if len(args) < 1 {
 		return shim.Error(funcName + " : requires an Acknowledgement document")
 	}
-	logger.Infof(funcName+" : Arguments : %s", args[0])
-
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &acknowledgement); err != nil {
 		return shim.Error(funcName + " : Failed to convert arg[0] to an Acknolwdgement notice: " + err.Error())
 	}
 
@@ -377,9 +386,9 @@ func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.R
 				(swapping the From and To). We error if we cannot marshal or
 				recieve no bytes
 		   ================================================================= */
+		var order PurchaseOrder
 		keys := []string{acknowledgement.To, acknowledgement.From, acknowledgement.DocumentNumber}
-		order, err := retrieveAndMarshalPOObject(stub, keys)
-		if err != nil {
+		if order, err = retrieveAndMarshalPOObject(stub, keys); err != nil {
 			return shim.Error(funcName + " : no existing Purchase Order Number " + acknowledgement.DocumentNumber)
 		}
 
@@ -420,27 +429,26 @@ func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.R
 			(swapping the From and To). We error if we cannot marshal or
 			recieve no bytes
 		 ================================================================= */
+		var salesOrder SalesOrder
 		keys := []string{acknowledgement.To, acknowledgement.From, acknowledgement.DocumentNumber}
-		order, err := retrieveAndMarshalPOObject(stub, keys)
-		if err != nil {
+		if salesOrder, err = retrieveAndMarshalSOObject(stub, keys); err != nil {
 			return shim.Error(funcName + " : no existing Sales Order Number " + acknowledgement.DocumentNumber)
 		}
 
-		if order.Status != OPEN {
+		if salesOrder.Status != OPEN {
+			fmt.Println("Sales Order status is " + salesOrder.Status)
 			return shim.Error(funcName + " :  Sales Order Number " + acknowledgement.DocumentNumber + " not in OPEN state")
 		}
 
 		/*=================================================================
 			We have the Purchase Order, and we set the STATUS to 'ACKNOWLEDGED'
 			The updated Purchase Order is updated into the ledger
-		================================================================= */
-		order.Status = ACKNOWLEDGED
-		orderBytes, err = json.Marshal(order)
-		if err != nil {
+		===salesOrder============================================================== */
+		salesOrder.Status = ACKNOWLEDGED
+		if orderBytes, err = json.Marshal(salesOrder); err != nil {
 			return shim.Error(funcName + " : failed to unmarshal existing Sales Order Number " + acknowledgement.DocumentNumber)
 		}
-		err = dbapi.UpdateObject(stub, "PO", keys, orderBytes)
-		if err != nil {
+		if err = dbapi.UpdateObject(stub, "PO", keys, orderBytes); err != nil {
 			return shim.Error(funcName + " : failed to update existing Sales Order Number " + acknowledgement.DocumentNumber)
 		}
 
@@ -449,8 +457,7 @@ func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.R
 			(errors on failure to store)
 		 ================================================================= */
 		aKeys := []string{acknowledgement.From, acknowledgement.To, acknowledgement.AckNumber}
-		ackBytes, err = json.Marshal(acknowledgement)
-		if err != nil {
+		if ackBytes, err = json.Marshal(acknowledgement); err != nil {
 			return shim.Error(funcName + " : failed to update existing Purchase Order Number " + acknowledgement.DocumentNumber)
 		}
 		dbapi.UpdateObject(stub, "ACK", aKeys, ackBytes)
@@ -472,8 +479,7 @@ func createReturnNotice(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	returnNotice := ReturnNotice{}
 	funcName := getFunctionName()
 
-	err = json.Unmarshal([]byte(args[0]), &returnNotice)
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &returnNotice); err != nil {
 		return shim.Error(funcName + " :Failed to convert arg[0] to a Return notice: " + err.Error())
 	}
 
@@ -481,8 +487,7 @@ func createReturnNotice(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 	keys := []string{returnNotice.OrderNumber}
 
 	objectType := "return"
-	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
-	if err != nil {
+	if Avalbytes, err = dbapi.QueryObject(stub, objectType, keys); err != nil {
 		return shim.Error(funcName + " : Failed to query return PurchaseOrder object")
 	}
 
@@ -491,42 +496,70 @@ func createReturnNotice(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 			"ID for Return Invoice: %s already exist ", returnNotice.OrderNumber))
 	}
 
-	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
-	if err != nil {
+	if err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0])); err != nil {
 		logger.Errorf(funcName+" : Error inserting Object into LedgerState %s", err)
 		return shim.Error(funcName + " : Return Notice Create failed")
 	}
 
 	return shim.Success(nil)
 }
+
 func createInvoice(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
-	logger.Infof("CreateInvoice : Arguments : %s", args[0])
 	invoice := Invoice{}
 	funcName := getFunctionName()
 
-	err = json.Unmarshal([]byte(args[0]), &invoice)
-	if err != nil {
+	if len(args) < 1 {
+		return shim.Error(funcName + " : requires a request parameter")
+	}
+
+	if err = json.Unmarshal([]byte(args[0]), &invoice); err != nil {
 		return shim.Error(funcName + " :Failed to convert arg[0] to a Invoice object: " + err.Error())
 	}
 
-	// Query and Retrieve the Full BaicInfo
-	keys := []string{invoice.OrderNumber}
-
-	objectType := "invoice"
-	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
-	if err != nil {
-		return shim.Error(funcName + " : Failed to query shipment object")
+	var objectType = "INV"
+	// Query and Retrieve an existing Invoice
+	keys := []string{invoice.From, invoice.To, invoice.InvoiceNumber}
+	//Error if we receive bytes or generate an error (no object is not an error)
+	if Avalbytes, err = dbapi.QueryObject(stub, objectType, keys); err != nil || Avalbytes != nil {
+		return shim.Error(funcName + " : Invoice with number " + invoice.InvoiceNumber + " already exists")
 	}
 
-	if Avalbytes != nil {
-		return shim.Error(fmt.Sprintf("CreateInvoice() : "+
-			"ID for Invoice Number: %s already exist ", invoice.OrderNumber))
+	switch invoice.OriginalOrderType {
+	case "PO":
+		var purchaseOrder = PurchaseOrder{}
+		objectType = "PO"
+		keys = []string{invoice.To, invoice.From, invoice.OriginalOrderNumber}
+
+		if Avalbytes, err = dbapi.QueryObject(stub, objectType, keys); err != nil || Avalbytes != nil {
+			return shim.Error(funcName + " : Invoice cannot find original purchase order " + invoice.OriginalOrderNumber)
+		}
+
+		if err = json.Unmarshal([]byte(args[0]), &purchaseOrder); err != nil {
+			return shim.Error(funcName + " :Failed to convert original order  : " + err.Error())
+		}
+
+		if purchaseOrder.Status != RECEIVED {
+			return shim.Error(funcName + " :Original Purchase Order goods not received : ")
+		}
+		//orderedquantity := make(map[string][]int)
+	case "SO":
+		var salesOrder = SalesOrder{}
+		objectType = "SO"
+		keys = []string{invoice.To, invoice.From, invoice.OriginalOrderNumber}
+		if Avalbytes, err = dbapi.QueryObject(stub, objectType, keys); err != nil || Avalbytes != nil {
+			return shim.Error(funcName + " : Invoice cannot find original purchase order " + invoice.OriginalOrderNumber)
+		}
+
+		if err = json.Unmarshal([]byte(args[0]), &salesOrder); err != nil {
+			return shim.Error(funcName + " :Failed to convert original order  : " + err.Error())
+		}
+
+	default:
 	}
 
-	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
-	if err != nil {
+	if err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0])); err != nil {
 		logger.Errorf(funcName+" : Error inserting Object into LedgerState %s", err)
 		return shim.Error(funcName + " : Invoice Create failed")
 	}
@@ -557,9 +590,7 @@ func queryOrderByOrderNumber(stub shim.ChaincodeStubInterface, args []string) pb
 		return shim.Error(funcName + " : requires one parameter (originating company)")
 	}
 
-	err = json.Unmarshal([]byte(args[0]), &query)
-
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &query); err != nil {
 		logger.Infof(funcName + " :failed to marshal query object")
 		return shim.Error(funcName + " : failed to marshal query object")
 	}
@@ -580,9 +611,7 @@ func queryOrderByOrderNumber(stub shim.ChaincodeStubInterface, args []string) pb
 			return shim.Error(err.Error())
 		}
 
-		err = json.Unmarshal(myKV.Value, &PurchaseOrder)
-
-		if err != nil {
+		if err = json.Unmarshal(myKV.Value, &PurchaseOrder); err != nil {
 			logger.Infof(funcName+" : failed to marshal PurchaseOrder: %s", err.Error())
 			return shim.Error(funcName + " : failed to marshal PurchaseOrder: " + err.Error())
 		}
@@ -609,17 +638,13 @@ func queryPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Resp
 		logger.Infof(funcName + " : requires request paramater")
 		return shim.Error(funcName + " : requires request parameter")
 	}
-	logger.Infof(funcName+" : Arguments : %s", args[0])
-	err = json.Unmarshal([]byte(args[0]), &query)
 
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &query); err != nil {
 		logger.Infof(funcName+" : Arguments : %s", args[0])
 	}
 
 	keys := []string{query.Requestor, query.Partner, query.OrderNumber}
-	PurchaseOrderbytes, err = dbapi.QueryObject(stub, "PO", keys)
-
-	if err != nil {
+	if PurchaseOrderbytes, err = dbapi.QueryObject(stub, "PO", keys); err != nil {
 		logger.Infof(funcName+" : failed to retrieve PurchaseOrder (PurchaseOrder number: %s, company %s )", query.OrderNumber, query.Requestor)
 		return shim.Error(funcName + " : failed to retrieve PurchaseOrder")
 	}
@@ -637,17 +662,14 @@ func querySalesOrder(stub shim.ChaincodeStubInterface, args []string) pb.Respons
 		logger.Infof(funcName + " :requires request paramater")
 		return shim.Error(funcName + " :requires request parameter")
 	}
-	logger.Infof(funcName+" : Arguments : %s", args[0])
-	err = json.Unmarshal([]byte(args[0]), &query)
-
-	if err != nil {
+	logger.Infof(funcName + " -------------")
+	if err = json.Unmarshal([]byte(args[0]), &query); err != nil {
 		logger.Infof(funcName+" : Arguments : %s", args[0])
+		return shim.Error(funcName + " : Failed to marshal the query object")
 	}
 
 	keys := []string{query.Requestor, query.Partner, query.OrderNumber}
-	PurchaseOrderbytes, err = dbapi.QueryObject(stub, "PO", keys)
-
-	if err != nil {
+	if PurchaseOrderbytes, err = dbapi.QueryObject(stub, "PO", keys); err != nil {
 		logger.Infof(funcName+" :fail to retrieve PurchaseOrder (PurchaseOrder number: %s, company %s )", query.OrderNumber, query.Requestor)
 		return shim.Error(funcName + " : fail to retrieve PurchaseOrder")
 	}
@@ -690,9 +712,7 @@ func queryAllPurchaseOrders(stub shim.ChaincodeStubInterface, args []string) pb.
 			return shim.Error(err.Error())
 		}
 
-		err = json.Unmarshal(myKV.Value, &PurchaseOrder)
-
-		if err != nil {
+		if err = json.Unmarshal(myKV.Value, &PurchaseOrder); err != nil {
 			logger.Infof(funcName+" :fail to marshal PurchaseOrder: %s", err.Error())
 			return shim.Error(funcName + " :fail to marshal PurchaseOrder: " + err.Error())
 		}
@@ -728,16 +748,12 @@ func queryShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response 
 		return shim.Error(funcName + " :requires request parameter")
 	}
 	logger.Infof(funcName+" :Arguments : %s", args[0])
-	err = json.Unmarshal([]byte(args[0]), &query)
-
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &query); err != nil {
 		logger.Infof(funcName+" : Arguments : %s", args[0])
 	}
 
 	keys := []string{query.Requestor, query.Partner, query.ShipmentNumber}
-	Shipmentbytes, err = dbapi.QueryObject(stub, "SHP", keys)
-
-	if err != nil {
+	if Shipmentbytes, err = dbapi.QueryObject(stub, "SHP", keys); err != nil {
 		logger.Infof(funcName+" :fail to retrieve shipment (shipment number: %s, company %s )", query.ShipmentNumber, query.Requestor)
 		return shim.Error(funcName + " :fail to retrieve shipment")
 	}
@@ -761,14 +777,11 @@ func queryRichQuery(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	}
 
 	logger.Infof(funcName+" :Arguments : %s", args[0])
-	err = json.Unmarshal([]byte(args[0]), &query)
-
-	if err != nil {
+	if err = json.Unmarshal([]byte(args[0]), &query); err != nil {
 		logger.Infof(funcName+" :Arguments : %s, %s", args[0], err.Error())
 		return shim.Error(funcName + " : error unmarshalling: " + err.Error())
 	}
 
-	logger.Infof("queryRichQuery : query name %s", query.QueryName)
 	if len(query.QueryFields) < 1 {
 		strAsBytes, _ := json.Marshal(query)
 		logger.Infof(funcName+" :Arguments : %s", strAsBytes)
@@ -778,7 +791,6 @@ func queryRichQuery(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	queryfield = query.QueryFields[0].FieldValue
 
 	formattedstring = getFormattedPurchaseOrderQuery(queryfield)
-	logger.Infof(funcName+" : Query : %s", formattedstring)
 	querybytes, err := dbapi.GetQueryResultForQueryString(stub, formattedstring)
 
 	if err != nil {
@@ -789,21 +801,9 @@ func queryRichQuery(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	return shim.Success(querybytes)
 }
 
-func queryShipmentByPurchaseOrderNumber(stub shim.ChaincodeStubInterface, args []string) pb.Response {
-	return shim.Success(nil)
-}
-
 ////////////////////////////////////////////////////////////////////////////
 //Query by selector (rich query!)
 ////////////////////////////////////////////////////////////////////////////
-
-////////////////////////////////////////////////////////////////////////////
-// Helper functions
-////////////////////////////////////////////////////////////////////////////
-
-func getFormattedPurchaseOrderQuery(PurchaseOrderNumber string) string {
-	return fmt.Sprintf("{\\\"selector\\\": { \\\"PurchaseOrderNumber\\\": \\\"%s\\\"}}", PurchaseOrderNumber)
-}
 
 ////////////////////////////////////////////////////////////////////////////
 // Inserting Data in to user table
