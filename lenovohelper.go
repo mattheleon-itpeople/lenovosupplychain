@@ -74,3 +74,7 @@ func retrieveAndMarshalSOObject(stub shim.ChaincodeStubInterface, args []string)
 	return order, nil
 
 }
+
+func getFormattedPurchaseOrderQuery(PurchaseOrderNumber string) string {
+	return fmt.Sprintf("{\\\"selector\\\": { \\\"PurchaseOrderNumber\\\": \\\"%s\\\"}}", PurchaseOrderNumber)
+}
