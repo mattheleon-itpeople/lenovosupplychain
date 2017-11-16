@@ -30,3 +30,13 @@ type PurchaseOrder struct {
 	OrderLine
 	Status string `json:"status"`
 }
+
+type SalesOrder struct {
+	OrderHeader
+	From             string `json:"from"`
+	To               string `json:"to"`
+	OriginalPONumber string `json:"originalPONumber"`
+	ShipTo           string `json:"shipTo"`
+	OrderLine
+	Status string `json:"status"`
+}
