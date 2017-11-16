@@ -212,15 +212,24 @@ func createShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response
 func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
+	var PurchaseOrderBytes []byte
 	logger.Infof("CreatePurchaseOrder : Arguments : %s", args[0])
 	PurchaseOrder := PurchaseOrder{}
+
+	/*Unmarshal the payload into a PurchaseOrder struct*/
 	err = json.Unmarshal([]byte(args[0]), &PurchaseOrder)
 	if err != nil {
 		return shim.Error("CreatePurchaseOrder : Failed to convert arg[0] to a PurchaseOrder: " + err.Error())
 	}
-	fmt.Println("Purchase order " + PurchaseOrder.To)
 
-	// Query and Retrieve the Full BaicInfo
+	/*=================================================================
+		    Determine if the Purchase Order is already in the Ledger by:
+				- Adding the From, To and OrderNumber to the keys, along with
+				    type 'PO'
+				- Doing a QueryObject to return the object and failing if we
+				    receive anything in err, or if there are bytes returned
+	    =================================================================
+	*/
 	keys := []string{PurchaseOrder.From, PurchaseOrder.To, PurchaseOrder.PONumber}
 
 	PurchaseOrderType := "PO"
@@ -231,10 +240,21 @@ func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 	if Avalbytes != nil {
 		return shim.Error(fmt.Sprintf("CreatePurchaseOrder() : "+
-			"PurchaseOrder for PurchaseOrder Number: %s already exist ", PurchaseOrder.PONumber))
+			"PurchaseOrder for PurchaseOrder Number: %s already exists ", PurchaseOrder.PONumber))
 	}
 
-	err = dbapi.UpdateObject(stub, PurchaseOrderType, keys, []byte(args[0]))
+	/*If the incoming Status  of the new Purchase Order is not OPEN, then reset it to OPEN */
+	if PurchaseOrder.Status != OPEN {
+		PurchaseOrder.Status = OPEN
+	}
+
+	/*Serialize the Purchase Order - as we have updated the STATUS - and store in the Ledger*/
+	PurchaseOrderBytes, err = json.Marshal(PurchaseOrder)
+	if err != nil {
+		return shim.Error("CreatePurchaseOrder() : Failed to serialize PurchaseOrder object")
+	}
+
+	err = dbapi.UpdateObject(stub, PurchaseOrderType, keys, PurchaseOrderBytes)
 	if err != nil {
 		logger.Errorf("CreatePurchaseOrder : Error inserting Object into LedgerState %s", err)
 		return shim.Error("CreatePurchaseOrder : POs Update failed")
@@ -244,20 +264,85 @@ func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Res
 
 }
 
+func createSalesOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var err error
+	var Avalbytes []byte
+	var SalesOrderBytes []byte
+	logger.Infof("CreateSalesOrder : Arguments : %s", args[0])
+	SalesOrder := SalesOrder{}
+
+	/*Unmarshal the payload into a PurchaseOrder struct*/
+	err = json.Unmarshal([]byte(args[0]), &SalesOrder)
+	if err != nil {
+		return shim.Error("CreateSalesOrder : Failed to convert arg[0] to a SalesOrder: " + err.Error())
+	}
+
+	/*=================================================================
+		    Determine if the Sales Order is already in the Ledger by:
+				- Adding the From, To and OrderNumber to the keys, along with
+				    type 'PO'
+				- Doing a QueryObject to return the object and failing if we
+				    receive anything in err, or if there are bytes returned
+	    =================================================================
+	*/
+	keys := []string{SalesOrder.From, SalesOrder.To, SalesOrder.PONumber}
+
+	SalesOrderType := "SO"
+	Avalbytes, err = dbapi.QueryObject(stub, SalesOrderType, keys)
+	if err != nil {
+		return shim.Error("CreateSalesOrder() : Failed to query SalesOrder object")
+	}
+
+	if Avalbytes != nil {
+		return shim.Error(fmt.Sprintf("CreateSalesOrder() : "+
+			"PurchaseOrder for SalesOrder Number: %s already exists ", SalesOrder.PONumber))
+	}
+
+	/*If the incoming Status  of the new Purchase Order is not OPEN, then reset it to OPEN */
+	if SalesOrder.Status != OPEN {
+		SalesOrder.Status = OPEN
+	}
+
+	/*Serialize the Purchase Order - as we have updated the STATUS - and store in the Ledger*/
+	SalesOrderBytes, err = json.Marshal(SalesOrder)
+	if err != nil {
+		return shim.Error("CreateSalesOrder() : Failed to serialize SalesOrder object")
+	}
+
+	err = dbapi.UpdateObject(stub, SalesOrderType, keys, SalesOrderBytes)
+	if err != nil {
+		logger.Errorf("CreateSalesOrder : Error inserting Object into LedgerState %s", err)
+		return shim.Error("CreateSalesOrder : POs Update failed")
+	}
+
+	return shim.Success(nil)
+
+}
+
 ////////////////////////////////////////////////////////////////////////////
-// List BasicEntityInfo data  about supplyer owned/invited by  specific Buyer.
-// Key will be buyer unique-id
+// ShipPart - not implemented for first version. Will be used to update
+//            partial or invcremental shipping notices
 ////////////////////////////////////////////////////////////////////////////
 
 func shipPart(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(nil)
 }
 
+/*=================================================================
+  createAcknowledgement - Used to store acknowledgements in the
+	                        ledger.
+================================================================= */
+
 func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 
 	var orderBytes []byte
 	var ackBytes []byte
 	acknowledgement := Acknowledgement{}
+
+	/*=================================================================
+		  Unmarshal the Acknowledgement object and error if that fails
+			or we do not receieve a payload
+	    ================================================================= */
 	err := json.Unmarshal([]byte(args[0]), &acknowledgement)
 
 	if len(args) < 1 {
@@ -268,15 +353,33 @@ func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.R
 	if err != nil {
 		return shim.Error("sendAcknowledgement : Failed to convert arg[0] to an Acknolwdgement notice: " + err.Error())
 	}
+
+	/*=================================================================
+		  we can receive different acks for different objects in upcoming
+			releases, so we determine the object from the acks DocumentType
+			and perform document specific ack processing
+	  ================================================================= */
 	switch acknowledgement.DocumentType {
 	case "PO":
+		/*=================================================================
+			  Retrieve the Purchase Order using the keys from the Ack
+				(swapping the From and To). We error if we cannot marshal or
+				recieve no bytes
+		   ================================================================= */
 		keys := []string{acknowledgement.To, acknowledgement.From, acknowledgement.DocumentNumber}
 		order, err := retrieveAndMarshalPOObject(stub, keys)
 		if err != nil {
 			return shim.Error("sendAcknowledgement() - no existing Purchase Order Number " + acknowledgement.DocumentNumber)
 		}
 
-		/*Update order to show Acknowledgement */
+		if order.Status != OPEN {
+			return shim.Error("sendAcknowledgement() -  Purchase Order Number " + acknowledgement.DocumentNumber + " not in OPEN state")
+		}
+
+		/*=================================================================
+		  We have the Purchase Order, and we set the STATUS to 'ACKNOWLEDGED'
+			The updated Purchase Order is updated into the ledger
+		================================================================= */
 		order.Status = ACKNOWLEDGED
 		orderBytes, err = json.Marshal(order)
 		if err != nil {
@@ -286,13 +389,20 @@ func createAcknowledgement(stub shim.ChaincodeStubInterface, args []string) pb.R
 		if err != nil {
 			return shim.Error("sendAcknowledgement() - failed to update existing Purchase Order Number " + acknowledgement.DocumentNumber)
 		}
+
+		/*=================================================================
+			  The Acknowledgement document is now stored in the ledger
+				(errors on failure to store)
+		   ================================================================= */
 		aKeys := []string{acknowledgement.From, acknowledgement.To, acknowledgement.DocumentNumber}
 		ackBytes, err = json.Marshal(acknowledgement)
 		if err != nil {
 			return shim.Error("sendAcknowledgement() - failed to update existing Purchase Order Number " + acknowledgement.DocumentNumber)
 		}
 		dbapi.UpdateObject(stub, "ACK", aKeys, ackBytes)
-
+		/*=================================================================
+		  If the documentType is not in the switch statement we error out
+			================================================================= */
 	default:
 		return shim.Error("sendAcknowledgement - Ack for Doctype " + acknowledgement.DocumentType + " not yet implemented")
 	}
