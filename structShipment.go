@@ -1,9 +1,10 @@
 package main
 
 type ShippedItem struct {
-	PartNumber    string `json:"partNumber"`
-	SerialNumber  string `json:"serialNumber"`
-	UnitOfMeasure string `json:"unitOfMeasure"`
+	PartNumber      string `json:"partNumber"`
+	SerialNumber    string `json:"serialNumber"`
+	UnitOfMeasure   string `json:"unitOfMeasure"`
+	ShippedQuantity string `json:"shippedQunatity"`
 }
 
 type Shipment struct {
