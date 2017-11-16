@@ -144,8 +144,9 @@ func TestSCM_invoke_createShipment(t *testing.T) {
 
 	checkQuery(t, stub, "queryPurchaseOrder", "{\"orderNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}", "{\"doctype\": \"PO\",\"ponumber\": \"1234\",\"supplierid\": \"supplier\",\"vendordescription\": \"Lenovo Laptop Builder\",\"from\": \"Manu1\", \"to\": \"Lenovo\", \"items\": [{\"commoditycode\": \"1234\",\"unitprice\": \"12.50\",\"uom\": \"EA\",\"shorttext\": \"widget1\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1250.00\"},{\"commoditycode\": \"1235\",\"unitprice\": \"15.50\",\"uom\": \"EA\",\"shorttext\": \"widget2\",\"orderedquantity\": \"100\",\"orderedvalue\": \"1500.00\"}]}")
 
-	// createSupplierBasicInfo for ITPC organization
-	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"supplierId\": \"supid1\", \"ordernumber\": \"0001\", \"from\": \"Lenovo\", \"to\": \"Manu1\"}")})
+	//createSupplierBasicInfo for ITPC organizationmber\": \"1234\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"partNumber\":\"1111\",\"shippedQuantity\":100},{\"partNumber\": \"2222\", \"shippedQuantity\": 200}], \"supplierId\": \"supid1\", \"ponumber\": \"0001\", \"distributorId\": \"Lenovo\", \"to\": \"Manu1\"}")})
+	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), []byte("{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"partNumber\":\"1111\",\"shippedQuantity\":100},{\"partNumber\": \"2222\", \"shippedQuantity\": 200}], \"supplierId\": \"supid1\", \"ponumber\": \"0001\", \"distributorId\": \"Lenovo\", \"to\": \"Manu1\"}")})
+
 	// validate supplier details of org ITPC with querySupplierBasicInfo
 	//checkQuery(t, stub, "querySupplierBasicInfo", "{\"Orgname\": \"ITPC\"}", "{\"Orgname\": \"ITPC\",\"Requestedby\": \"Lenovo\",\"Providedby\": \"IBM\",\"address\": {\"street\": \"11,abcd dr\",\"zip\": \"33647\",\"city\": \"Tampa\",\"country\": \"USA\",\"state\": \"Florida\",\"timezone\": \"EST\"},\"contacts\": [{\"type\": \"mobile\",\"cvalue\": \"+1-813-499-3389\"}, {\"type\": \"Email\",\"cvalue\": \"abc@gmail.com\"}],\"orgtype\": \"0\",\"hashedbuyerinfo\": \"\",\"hashedsupinfo\": \"\"}")
 }

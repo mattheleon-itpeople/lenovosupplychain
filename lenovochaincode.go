@@ -21,6 +21,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"dbapi"
 
@@ -144,63 +145,55 @@ func createShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response
 	if len(args) < 1 {
 		return shim.Error("Not enough parameters")
 	}
+
+	fmt.Println("createShipment : Arguments : %s", args[0])
+
 	err = json.Unmarshal([]byte(args[0]), &Shipment)
 	if err != nil {
-		return shim.Error("Failed to unmarshal shipment. " + args[0])
+		return shim.Error("Failed to unmarshal shipment. " + err.Error())
 	}
+	fmt.Println("/////////////////////////////////////////////Shipping Values :" + Shipment.DistributorID + " ," + Shipment.To + " ," + Shipment.ShipmentNumber + " ,")
 
-	from := Shipment.From
+	distributerID := Shipment.DistributorID
 	to := Shipment.To
-	shipNumber := Shipment.ShipmentNumber
-
-	keys := []string{to, from, shipNumber}
+	shippingNumber := Shipment.ShipmentNumber
+	keys := []string{to, distributerID, shippingNumber}
 
 	objectType := "PO"
-	//TODO: QUERY PurchaseOrder LOOP THROUGH PurchaseOrder ITEM
 	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
 
 	if err != nil {
-		return shim.Error("Failed to retrieve PurchaseOrder with provided shipping notice. " + err.Error())
+		return shim.Error("Failed to retrieve order with provided order number. " + err.Error())
 	}
 	if &Avalbytes == nil {
-		return shim.Error("No PurchaseOrder was retrieved. " + err.Error())
+		return shim.Error("No order was retrieved. " + err.Error())
 	}
+
 	err = json.Unmarshal(Avalbytes, &PurchaseOrder)
 	if err != nil {
-		return shim.Error("Failed to marshal Sales PurchaseOrder. " + string(Avalbytes))
+		return shim.Error("Failed to marshal Sales Order. " + string(Avalbytes))
 	}
 
-	//items := PurchaseOrder.Items
+	if len(PurchaseOrder.Items) != len(Shipment.ShippedItems) {
+		return shim.Error("***** Order quantity does not match shipping quantity. Changing order status to: pending review. *****")
+	}
 
-	quantity := make(map[string][]string)
+	orderedquantity := make(map[string][]int)
 
 	for _, i := range PurchaseOrder.Items {
-		quantity[i.CommodityCode] = append(quantity[i.CommodityCode], i.OrderedQuantity)
-		fmt.Println(quantity[i.CommodityCode])
+		fmt.Println("jkfnfkjnhns : " + i.OrderedQuantity)
+		quant, err := strconv.Atoi(i.OrderedQuantity)
+		orderedquantity[i.CommodityCode] = append(orderedquantity[i.CommodityCode], quant)
+		fmt.Println(orderedquantity[i.CommodityCode])
+
+		if err != nil {
+			return shim.Error("***** Error converting quantity to int *****")
+		}
 	}
 
-	/*
-	   if len(PurchaseOrder.PurchaseOrderLine) != len(Shipment.ShippedItems) {
-	       return shim.Error("***** PurchaseOrder quantity does not match shipping quantity. Changing PurchaseOrder status to: pending review. *****")
-	   }
-
-	   for iterator < len(PurchaseOrder.PurchaseOrderLine) {
-
-	       // TAKE ITERATOR CREATE MAP OF BOTH SIDES AND COMPARE
-
-	       //PurchaseOrderQuantity := PurchaseOrder.quantity
-	       //shipQuantity := Shipment.quantity
-	           iterator += iterator
-	       }
-	       iterator += iterator
-
-
-	   if PurchaseOrderQuantity != shipQuantity {
-
-	   }
-	*/
-
+	objectType = "SHP"
 	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
+
 	if err != nil {
 		logger.Errorf("shipPart : Error inserting Shipment of parts into LedgerState %s", err)
 		return shim.Error("shipPart : Shipping part failed")
@@ -208,7 +201,6 @@ func createShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	return shim.Success(nil)
 }
-
 func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
