@@ -95,7 +95,7 @@ func TestSCM_query_ccversion(t *testing.T) {
 
 }
 
-func TestSCM_invoke_createPurchaseOrder(t *testing.T) {
+/*func TestSCM_invoke_createPurchaseOrder(t *testing.T) {
 	lcc := new(LenovoChainCode)
 	stub := shim.NewMockStub("ldm", lcc)
 
@@ -132,6 +132,7 @@ func TestSCM_invoke_createAcknowledgement(t *testing.T) {
 	// check the purchase order (status acknowledged)
 	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
 
+
 }
 func TestSCM_invoke_createSalesOrder(t *testing.T) {
 	lcc := new(LenovoChainCode)
@@ -164,6 +165,7 @@ func TestSCM_invoke_createSalesOrder(t *testing.T) {
 	//query Sales order (status = acknowledged)
 	checkQuery(t, stub, "querySalesOrder", salesOrderAckQuery, salesOrderAckResponse)
 }
+*/
 func TestSCM_invoke_createShipment(t *testing.T) {
 	lcc := new(LenovoChainCode)
 	stub := shim.NewMockStub("ldm", lcc)
@@ -182,6 +184,12 @@ func TestSCM_invoke_createShipment(t *testing.T) {
 
 	// check the purchase order (status acknowledged)
 	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
+
+	//create Sales  order (status open)
+	checkInvoke(t, stub, [][]byte{[]byte("createSalesOrder"), salesOrderPayload})
+
+	//query Sales order
+	checkQuery(t, stub, "querySalesOrder", salesOrderQuery, salesOrderQueryResponse)
 
 	//Invoke the createShipment function
 	checkInvoke(t, stub, [][]byte{[]byte("createShipment"), shipmentPayload})

@@ -14,6 +14,7 @@ type QueryShipment struct {
 	ShipmentNumber string `json:"shipmentNumber"`
 	Requestor      string `json:"requestor"`
 	Partner        string `json:"partner"`
+	DistributorID  string `json:"distributorId"`
 }
 
 type QueryField struct {

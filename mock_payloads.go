@@ -42,7 +42,7 @@ var ackSOPayload = []byte("{\"doctype\":\"Acknowledgement\",\"ackNumber\":\"4322
   SHipment Payloads (create/query)
  =======================================*/
 
-var shipmentPayload = []byte("{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"partNumber\":\"1111\",\"shippedQuantity\":100},{\"partNumber\": \"2222\", \"shippedQuantity\": 200}], \"supplierId\": \"supid1\", \"ponumber\": \"0001\", \"distributorId\": \"Lenovo\", \"to\": \"Manu1\"}")
+var shipmentPayload = []byte("{\"shipmentNumber\": \"4321\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"commodityCode\":\"1111\",\"orderedQuantity\":100},{\"commodityCode\": \"2222\", \"orderedQuantity\": 200}], \"supplierId\": \"supid1\", \"orderNumber\": \"1234\", \"distributorId\": \"Lenovo\", \"from\": \"supid1\", \"to\": \"Manu1\"}")
 
-var shipmentQuery = "{\"shipmentNumber\": \"1234\", \"requestor\": \"Manu1\", \"partner\": \"Lenovo\"}"
-var shipmentQueryResponse = "{\"shipmentNumber\": \"1234\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"partNumber\":\"1111\",\"shippedQuantity\":100},{\"partNumber\": \"2222\", \"shippedQuantity\": 200}], \"supplierId\": \"supid1\", \"ponumber\": \"0001\", \"distributorId\": \"Lenovo\", \"to\": \"Manu1\"}"
+var shipmentQuery = "{\"shipmentNumber\": \"4321\", \"requestor\": \"supid1\", \"partner\": \"Manu1\", \"distributorId\": \"Lenovo\"}"
+var shipmentQueryResponse = "{\"shipmentNumber\": \"4321\",\"trackingnumber\": \"4567\", \"shippedItems\": [{\"commodityCode\":\"1111\",\"orderedQuantity\":100},{\"commodityCode\": \"2222\", \"orderedQuantity\": 200}], \"supplierId\": \"supid1\", \"orderNumber\": \"1234\", \"distributorId\": \"Lenovo\", \"from\": \"supid1\", \"to\": \"Manu1\"}"

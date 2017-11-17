@@ -21,7 +21,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"strconv"
 
 	"dbapi"
 
@@ -66,6 +65,7 @@ const (
 	INVOICED     = "invoiced"
 	PAID         = "paid"
 	RECEIVED     = "received"
+	SHIPPED      = "shipped"
 )
 
 /////////////////////////////////////////////////////
@@ -150,11 +150,25 @@ func getVersion(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	return shim.Success(version)
 }
 
+// Do i have args which is a shipment
+// unmarshal check if valid shipment
+// shipment keys
+// object type query ledger ->SHP
+// does shipment exist? from to distrib shipnum
+// retrieve ship notice on those keys -> if u get thats error
+// create keys for sales order
+// unmarshal and then line check
+// from so and ship
+// validations
+// store shipment
+
 func createShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	//TODO: update order status to shipped -- check for acknowledged changed to shipped -- retrieve sales order -- instead PO to SO -- add check query shipment not yet
 	var err error
 	var Avalbytes []byte
+	var SOBytes []byte
 	Shipment := Shipment{}
-	PurchaseOrder := PurchaseOrder{}
+	SalesOrder := SalesOrder{}
 	funcName := getFunctionName()
 
 	if len(args) < 1 {
@@ -165,56 +179,68 @@ func createShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response
 
 	err = json.Unmarshal([]byte(args[0]), &Shipment)
 	if err != nil {
-		return shim.Error(funcName + " : Failed to unmarshal shipment. " + err.Error())
+		return shim.Error("Failed to unmarshal shipment. " + err.Error())
 	}
 
 	distributerID := Shipment.DistributorID
 	to := Shipment.To
 	shippingNumber := Shipment.ShipmentNumber
-	keys := []string{to, distributerID, shippingNumber}
+	from := Shipment.From
 
-	objectType := "PO"
-	Avalbytes, err = dbapi.QueryObject(stub, objectType, keys)
+	shipkeys := []string{from, to, distributerID, shippingNumber}
+
+	objectType := "SHP"
+	Avalbytes, err = dbapi.QueryObject(stub, objectType, shipkeys)
 
 	if err != nil {
-		return shim.Error(funcName + " : Failed to retrieve order with provided order number. " + err.Error())
-	}
-	if &Avalbytes == nil {
-		return shim.Error(funcName + " : No order was retrieved. " + err.Error())
+		return shim.Error("Cannot access ledger " + err.Error())
 	}
 
-	err = json.Unmarshal(Avalbytes, &PurchaseOrder)
-	if err != nil {
-		return shim.Error(funcName + " : Failed to marshal Sales Order. " + string(Avalbytes))
+	if Avalbytes != nil {
+		return shim.Error("shipment already exists " + Shipment.ShipmentNumber)
 	}
 
-	if len(PurchaseOrder.Items) != len(Shipment.ShippedItems) {
-		return shim.Error(funcName + " : Order quantity does not match shipping quantity. Changing order status to: pending review. *****")
+	originalPONumber := Shipment.OrderNumber
+	orderFrom := Shipment.DistributorID
+	orderTo := Shipment.From //supplier
+
+	sokeys := []string{orderFrom, orderTo, originalPONumber}
+	objectType = "SO"
+	if SOBytes, err = dbapi.QueryObject(stub, objectType, sokeys); err != nil {
+		return shim.Error("Failed to retrieve Sales Order. ")
+	}
+	if SOBytes == nil {
+		return shim.Error("sobytes has nothing. ")
 	}
 
-	orderedquantity := make(map[string][]int)
+	if err = json.Unmarshal(SOBytes, &SalesOrder); err != nil {
+		return shim.Error("Failed to marshal Sales Order. " + string(SOBytes) + err.Error())
+	}
 
-	for _, i := range PurchaseOrder.Items {
-		fmt.Println("jkfnfkjnhns : " + i.OrderedQuantity)
-		quant, err := strconv.Atoi(i.OrderedQuantity)
-		orderedquantity[i.CommodityCode] = append(orderedquantity[i.CommodityCode], quant)
-		fmt.Println(orderedquantity[i.CommodityCode])
+	if len(SalesOrder.Items) != len(Shipment.ShippedItems) {
+		return shim.Error("***** Order quantity does not match shipping quantity. Changing order status to: pending review. *****")
+	}
 
-		if err != nil {
-			return shim.Error(funcName + " : ***** Error converting quantity to int *****")
-		}
+	var linesMatch bool
+
+	if linesMatch, err = checkShipDetails(SalesOrder.Items, Shipment.ShippedItems); err != nil || !linesMatch {
+		return shim.Error(funcName + " : Shipment " + SalesOrder.PONumber + " : " + err.Error())
+	}
+
+	/*If the incoming Status  of the new Purchase Order is not OPEN, then reset it to OPEN */
+	if SalesOrder.Status != SHIPPED {
+		SalesOrder.Status = SHIPPED
 	}
 
 	objectType = "SHP"
-	err = dbapi.UpdateObject(stub, objectType, keys, []byte(args[0]))
-
-	if err != nil {
-		logger.Errorf(funcName+" :  Error inserting Shipment of parts into LedgerState %s", err)
-		return shim.Error(funcName + " :  Shipping part failed")
+	if err = dbapi.UpdateObject(stub, objectType, shipkeys, []byte(args[0])); err != nil {
+		logger.Errorf("createShipment : Error inserting Shipment of parts into LedgerState %s", err)
+		return shim.Error("createShipment : Shipping part failed")
 	}
 
 	return shim.Success(nil)
 }
+
 func createPurchaseOrder(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 	var Avalbytes []byte
@@ -801,7 +827,7 @@ func queryShipment(stub shim.ChaincodeStubInterface, args []string) pb.Response 
 		logger.Infof(funcName+" : Arguments : %s", args[0])
 	}
 
-	keys := []string{query.Requestor, query.Partner, query.ShipmentNumber}
+	keys := []string{query.Requestor, query.Partner, query.DistributorID, query.ShipmentNumber}
 	if Shipmentbytes, err = dbapi.QueryObject(stub, "SHP", keys); err != nil {
 		logger.Infof(funcName+" :fail to retrieve shipment (shipment number: %s, company %s )", query.ShipmentNumber, query.Requestor)
 		return shim.Error(funcName + " :fail to retrieve shipment")

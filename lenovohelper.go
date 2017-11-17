@@ -104,3 +104,26 @@ func checkItemDetails(poOrderItems []ItemDetails, soOrderItems []ItemDetails) (b
 
 	return true, nil
 }
+
+//TODO FAILS AT STRING ARRAY
+func checkShipDetails(soOrderItems []ItemDetails, Shipment []ShippedItem) (bool, error) {
+	orderedquantity := make(map[string]string)
+
+	for _, i := range soOrderItems {
+		orderedquantity[i.CommodityCode] = i.OrderedQuantity
+		//orderedquantity[i.CommodityCode] = append(orderedquantity[i.CommodityCode], i.UOM)
+		fmt.Println(i.OrderedQuantity)
+	}
+	for _, j := range Shipment {
+		fmt.Println(orderedquantity[j.CommodityCode])
+		if quantity := orderedquantity[j.CommodityCode]; quantity != j.OrderedQuantity {
+
+			return false, fmt.Errorf("Part number : " + j.CommodityCode + " invalid quantity " + quantity)
+		}
+		//	if uom := orderedquantity[j.CommodityCode][1]; uom != j.UOM {
+		//	return false, fmt.Errorf("Part number : " + j.CommodityCode + " invalid uom " + uom)
+		//}
+	}
+
+	return true, nil
+}
