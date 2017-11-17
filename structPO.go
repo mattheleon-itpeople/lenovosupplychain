@@ -28,7 +28,8 @@ type PurchaseOrder struct {
 	From string `json:"from"`
 	To   string `json:"to"`
 	OrderLine
-	Status string `json:"status"`
+	OrderTotal string `json:"orderTotal"`
+	Status     string `json:"status"`
 }
 
 type SalesOrder struct {
@@ -39,5 +40,6 @@ type SalesOrder struct {
 	OriginalPONumber string `json:"originalPONumber"`
 	ShipTo           string `json:"shipTo"`
 	OrderLine
-	Status string `json:"status"`
+	OrderTotal string `json:"orderTotal"`
+	Status     string `json:"status"`
 }
