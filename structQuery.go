@@ -8,6 +8,7 @@ type QueryOrder struct {
 	OrderNumber string `json:"orderNumber"`
 	Requestor   string `json:"requestor"`
 	Partner     string `json:"partner"`
+	DocType     string `json:"docType"`
 }
 
 type QueryShipment struct {
