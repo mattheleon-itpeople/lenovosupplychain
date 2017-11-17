@@ -156,10 +156,13 @@ func TestSCM_invoke_createSalesOrder(t *testing.T) {
 	checkInvoke(t, stub, [][]byte{[]byte("createSalesOrder"), salesOrderPayload})
 
 	//query Sales order
-	checkQuery(t, stub, "querySalesOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
+	checkQuery(t, stub, "querySalesOrder", salesOrderQuery, salesOrderQueryResponse)
 
 	//Create the acknowledgement of the Sales order
 	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackSOPayload})
+
+	//query Sales order (status = acknowledged)
+	checkQuery(t, stub, "querySalesOrder", salesOrderAckQuery, salesOrderAckResponse)
 }
 func TestSCM_invoke_createShipment(t *testing.T) {
 	lcc := new(LenovoChainCode)
