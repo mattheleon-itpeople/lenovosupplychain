@@ -106,7 +106,7 @@ func TestSCM_query_ccversion(t *testing.T) {
 	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
 
 	// query the purchase order (queryPurchaseOrder) and check status
-	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
+	checkQuery(t, stub, "queryOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
 
 	// Query a specific order number (without the "to") and receive an array (size: 1)
 	checkQuery(t, stub, "queryOrderByOrderNumber", purchaseOrderByNumberQuery, purchaseOrderByNumberResponse)
@@ -124,13 +124,13 @@ func TestSCM_invoke_createAcknowledgement(t *testing.T) {
 	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
 
 	// query the purchase order (queryPurchaseOrder) and check status
-	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
+	checkQuery(t, stub, "queryOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
 
 	//Create the acknowledgement of the Purchase order
 	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackPayload})
 
 	// check the purchase order (status acknowledged)
-	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
+	checkQuery(t, stub, "queryOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
 
 
 }
@@ -145,25 +145,25 @@ func TestSCM_invoke_createSalesOrder(t *testing.T) {
 	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
 
 	// query the purchase order (queryPurchaseOrder) and check status
-	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
+	checkQuery(t, stub, "queryOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
 
 	//Create the acknowledgement of the Purchase order
 	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackPayload})
 
 	// check the purchase order (status acknowledged)
-	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
+	checkQuery(t, stub, "queryOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
 
 	//create Sales  order (status open)
 	checkInvoke(t, stub, [][]byte{[]byte("createSalesOrder"), salesOrderPayload})
 
 	//query Sales order
-	checkQuery(t, stub, "querySalesOrder", salesOrderQuery, salesOrderQueryResponse)
+	checkQuery(t, stub, "queryOrder", salesOrderQuery, salesOrderQueryResponse)
 
 	//Create the acknowledgement of the Sales order
 	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackSOPayload})
 
 	//query Sales order (status = acknowledged)
-	checkQuery(t, stub, "querySalesOrder", salesOrderAckQuery, salesOrderAckResponse)
+	checkQuery(t, stub, "queryOrder", salesOrderAckQuery, salesOrderAckResponse)
 }
 */
 func TestSCM_invoke_createShipment(t *testing.T) {
@@ -177,13 +177,13 @@ func TestSCM_invoke_createShipment(t *testing.T) {
 	checkInvoke(t, stub, [][]byte{[]byte("createPurchaseOrder"), purchaseOrderPayload})
 
 	// query the purchase order (queryPurchaseOrder) and check status
-	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
+	checkQuery(t, stub, "queryOrder", purchaseOrderQueryPayload, purchaseQueryResponse1)
 
 	//Create the acknowledgement of the Purchase order
 	checkInvoke(t, stub, [][]byte{[]byte("createAcknowledgement"), ackPayload})
 
 	// check the purchase order (status acknowledged)
-	checkQuery(t, stub, "queryPurchaseOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
+	checkQuery(t, stub, "queryOrder", purchaseOrderAckQuery, purchaseOrderAckResponse)
 
 	//create Sales  order (status open)
 	checkInvoke(t, stub, [][]byte{[]byte("createSalesOrder"), salesOrderPayload})

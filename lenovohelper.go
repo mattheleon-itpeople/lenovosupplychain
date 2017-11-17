@@ -87,7 +87,6 @@ func getFormattedPurchaseOrderQuery(PurchaseOrderNumber string) string {
 
 func checkItemDetails(poOrderItems []ItemDetails, soOrderItems []ItemDetails) (bool, error) {
 	orderedquantity := make(map[string][]string)
-
 	for _, i := range poOrderItems {
 		orderedquantity[i.CommodityCode] = append(orderedquantity[i.CommodityCode], i.OrderedQuantity)
 		orderedquantity[i.CommodityCode] = append(orderedquantity[i.CommodityCode], i.UOM)

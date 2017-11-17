@@ -6,6 +6,8 @@ type Invoice struct {
 	From                string        `json:"from"`
 	To                  string        `json:"to"`
 	OriginalOrderNumber string        `json:"originalOrderNumber"`
-	OriginalOrderType   string        `json:orginalOrderType`
+	OriginalOrderType   string        `json:"orginalOrderType"`
 	Items               []ItemDetails `json:"items"`
+	InvoiceAmount       string        `json:"invoiceAmount"`
+	Status              string        `json:"status"`
 }
